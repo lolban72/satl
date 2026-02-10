@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { SessionProvider } from "next-auth/react";
 import { useCart } from "../lib/cart-store";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
@@ -10,5 +11,5 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     hydrate();
   }, [hydrate]);
 
-  return <>{children}</>;
+  return <SessionProvider>{children}</SessionProvider>;
 }

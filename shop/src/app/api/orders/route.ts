@@ -1,5 +1,7 @@
 import { z } from "zod";
-import { prisma } from "../../../lib/prisma";
+import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
+
 
 const BodySchema = z.object({
   customer: z.object({
@@ -12,7 +14,7 @@ const BodySchema = z.object({
       z.object({
         productId: z.string().min(1),
         variantId: z.string().optional(),
-        qty: z.number().int().min(1).max(99),
+        qty: z.coerce.number().int().min(1).max(99),
       })
     )
     .min(1),
@@ -20,6 +22,9 @@ const BodySchema = z.object({
 
 export async function POST(req: Request) {
   try {
+    const session = await auth();
+    const userId = (session?.user as any)?.id as string | undefined;
+
     const body = BodySchema.parse(await req.json());
 
     const detailedItems: {
@@ -44,7 +49,7 @@ export async function POST(req: Request) {
       }
 
       const variant = i.variantId
-        ? product.variants.find((v) => v.id === i.variantId)
+        ? product.variants.find((v: { id: string | undefined; }) => v.id === i.variantId)
         : undefined;
 
       if (i.variantId && !variant) {
@@ -70,13 +75,16 @@ export async function POST(req: Request) {
       });
     }
 
-    const order = await prisma.$transaction(async (tx) => {
+    const order = await prisma.$transaction(async (tx: {
+      user: any; order: { create: (arg0: { data: { total: number; name: string; phone: string; address: string; userId: string | null; items: { create: { productId: string; variantId: string | undefined; title: string; price: number; quantity: number; }[]; }; }; select: { id: boolean; }; }) => any; }; variant: { update: (arg0: { where: { id: string; }; data: { stock: { decrement: number; }; }; }) => any; }; 
+}) => {
       const created = await tx.order.create({
         data: {
           total,
           name: body.customer.name,
           phone: body.customer.phone,
           address: body.customer.address,
+          userId: userId ?? null,
           items: {
             create: detailedItems.map((i) => ({
               productId: i.productId,
@@ -89,6 +97,18 @@ export async function POST(req: Request) {
         },
         select: { id: true },
       });
+
+      if (userId) {
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            name: body.customer.name,
+            phone: body.customer.phone,
+            address: body.customer.address,
+          },
+        });
+      }
+
 
       for (const i of detailedItems) {
         if (i.variantId) {
