@@ -1,15 +1,12 @@
-import ProductCreateForm from "@/app/admin/product/ui/ProductCreateForm"; // путь поправь под твой проект
-// или перенеси ProductCreateForm в /admin/products/ui и импортируй оттуда
+import ProductCreateForm from "../ui/ProductCreateForm";
 
 export default function NewProductPage() {
   return (
     <div className="rounded-2xl border p-4">
       <div className="text-lg font-semibold">Добавить товар</div>
-      <div className="mt-4">
-        <ProductCreateForm />
-      </div>
+      <ProductCreateForm />
       <p className="mt-3 text-sm text-gray-600">
-        Сейчас создаётся товар + один вариант (one/default).
+        Создаётся товар + один вариант (one/default). Фото загружается с устройства через /api/upload.
       </p>
     </div>
   );

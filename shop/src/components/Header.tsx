@@ -22,7 +22,6 @@ export default async function Header() {
     <div className="sticky top-0 z-50 bg-white text-black">
       <TopMarquee
         text="СКИДКИ 20%"
-        speedSeconds={18}
         fontClass={brygada.className}
       />
 

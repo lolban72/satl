@@ -34,6 +34,25 @@ model Category {
   products   Product[]
 }
 
+model HeroBanner {
+  id        String   @id @default(cuid())
+  enabled   Boolean  @default(true)
+
+  title     String
+  subtitle  String?
+  buttonText String?
+  buttonHref String?
+
+  // картинка (url из /api/upload), можно пустую — тогда будет просто цвет/градиент
+  imageUrl  String?
+
+  // затемнение поверх картинки (0..100)
+  overlay   Int      @default(25)
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
 
 model Product {
   id          String   @id @default(cuid())
