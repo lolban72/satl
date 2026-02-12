@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useCart } from "@/src/lib/cart-store";
+import { useCart } from "@/lib/cart-store";
 
 type Variant = { id: string; size: string; color: string; stock: number };
 
