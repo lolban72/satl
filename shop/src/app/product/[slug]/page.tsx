@@ -1,4 +1,4 @@
-import { prisma } from "../../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 import AddToCart from "./ui/AddToCart";
 
 export default async function ProductPage({
@@ -6,7 +6,8 @@ export default async function ProductPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = await params; // <-- важно
+  const { slug: rawSlug } = await params;
+  const slug = decodeURIComponent(rawSlug);
 
   const product = await prisma.product.findUnique({
     where: { slug },
@@ -18,7 +19,6 @@ export default async function ProductPage({
   return (
     <div className="mx-auto max-w-5xl p-6">
       <div className="grid gap-8 md:grid-cols-2">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={product.images?.[0] ?? "https://picsum.photos/seed/placeholder/800/800"}
           alt={product.title}

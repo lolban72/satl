@@ -17,6 +17,24 @@ model User {
   orders    Order[]
 }
 
+model Category {
+  id         String   @id @default(cuid())
+  slug       String   @unique
+  title      String
+
+  // показ
+  showInNav  Boolean  @default(true)
+  showOnHome Boolean  @default(true)
+
+  // раздельная сортировка
+  navOrder   Int      @default(0)
+  homeOrder  Int      @default(0)
+
+  createdAt  DateTime @default(now())
+  products   Product[]
+}
+
+
 model Product {
   id          String   @id @default(cuid())
   slug        String   @unique
@@ -26,6 +44,8 @@ model Product {
   images      String[]
   createdAt   DateTime @default(now())
   variants    Variant[]
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 }
 
 model Variant {

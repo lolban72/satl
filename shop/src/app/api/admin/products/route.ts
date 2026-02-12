@@ -8,6 +8,7 @@ const Schema = z.object({
   priceRub: z.string().min(1),
   image: z.string().optional(),
   stock: z.string().min(1),
+  categoryId: z.string().nullable().optional(), // ✅
 });
 
 export async function POST(req: Request) {
@@ -37,7 +38,17 @@ export async function POST(req: Request) {
       return Response.json({ error: "Slug уже занят" }, { status: 400 });
     }
 
-    // ✅ sku вычисляем тут (после body)
+    // ✅ проверка категории (опционально)
+    if (body.categoryId) {
+      const cat = await prisma.category.findUnique({
+        where: { id: body.categoryId },
+        select: { id: true },
+      });
+      if (!cat) {
+        return Response.json({ error: "Категория не найдена" }, { status: 400 });
+      }
+    }
+
     const sku = `${body.slug}-one-default-${Date.now()}`.toUpperCase();
 
     const created = await prisma.$transaction(async (tx) => {
@@ -47,6 +58,7 @@ export async function POST(req: Request) {
           slug: body.slug,
           price,
           images: body.image ? [body.image] : [],
+          categoryId: body.categoryId ?? null, // ✅
         },
         select: { id: true, slug: true },
       });

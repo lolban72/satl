@@ -1,0 +1,64 @@
+import Link from "next/link";
+import { prisma } from "@/lib/prisma";
+
+export default async function AdminDashboard() {
+  const [productsCount, categoriesCount] = await Promise.all([
+    prisma.product.count(),
+    prisma.category.count(),
+  ]);
+
+  const cards = [
+    {
+      title: "Товары",
+      desc: "Добавление, редактирование, удаление товаров.",
+      links: [
+        { href: "/admin/products", label: "Список товаров" },
+        { href: "/admin/products/new", label: "Добавить товар" },
+      ],
+    },
+    {
+      title: "Категории",
+      desc: "Добавление, редактирование, удаление категорий.",
+      links: [{ href: "/admin/categories", label: "Управление категориями" }],
+    },
+    {
+      title: "Навигация",
+      desc: "Порядок категорий отдельно для шапки и главной.",
+      links: [
+        { href: "/admin/navigation/header", label: "Порядок в шапке" },
+        { href: "/admin/navigation/home", label: "Порядок на главной" },
+      ],
+    },
+  ];
+
+  return (
+    <div className="grid gap-6">
+      <div className="rounded-2xl border p-4">
+        <div className="text-lg font-semibold">Сводка</div>
+        <div className="mt-2 text-sm text-gray-600">
+          Товаров: <b>{productsCount}</b> · Категорий: <b>{categoriesCount}</b>
+        </div>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        {cards.map((c) => (
+          <div key={c.title} className="rounded-2xl border p-4">
+            <div className="text-lg font-semibold">{c.title}</div>
+            <div className="mt-1 text-sm text-gray-600">{c.desc}</div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {c.links.map((l) => (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className="rounded-xl border px-3 py-2 text-sm hover:bg-gray-50"
+                >
+                  {l.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
