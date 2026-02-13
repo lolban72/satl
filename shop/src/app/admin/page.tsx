@@ -7,6 +7,15 @@ export default async function AdminDashboard() {
     prisma.category.count(),
   ]);
 
+  // ✅ безопасно: если HeroBanner ещё не добавлен/не применена миграция,
+  // админка не упадёт
+  let heroCount: number | null = null;
+  try {
+    heroCount = await prisma.heroBanner.count();
+  } catch {
+    heroCount = null;
+  }
+
   const cards = [
     {
       title: "Товары",
@@ -29,6 +38,13 @@ export default async function AdminDashboard() {
         { href: "/admin/navigation/home", label: "Порядок на главной" },
       ],
     },
+    {
+      title: "Маркетинг",
+      desc: "Hero-баннер на главной (текст, кнопка, фон, включение).",
+      links: [
+        { href: "/admin/marketing/hero", label: "Hero баннер" },
+      ],
+    },
   ];
 
   return (
@@ -37,7 +53,18 @@ export default async function AdminDashboard() {
         <div className="text-lg font-semibold">Сводка</div>
         <div className="mt-2 text-sm text-gray-600">
           Товаров: <b>{productsCount}</b> · Категорий: <b>{categoriesCount}</b>
+          {heroCount !== null ? (
+            <>
+              {" "}· Hero баннеров: <b>{heroCount}</b>
+            </>
+          ) : null}
         </div>
+
+        {heroCount === null ? (
+          <div className="mt-2 text-xs text-gray-500">
+            HeroBanner ещё не подключён в Prisma (или не применена миграция) — пункт меню уже добавлен, но счётчик скрыт.
+          </div>
+        ) : null}
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">

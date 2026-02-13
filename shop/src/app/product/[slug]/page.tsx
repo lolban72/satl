@@ -17,7 +17,7 @@ export default async function ProductPage({
   if (!product) return <div className="p-6">Товар не найден</div>;
 
   return (
-    <div className="mx-auto max-w-5xl p-6">
+    <div className="mx-auto max-w-5xl p-6 mt-25">
       <div className="grid gap-8 md:grid-cols-2">
         <img
           src={product.images?.[0] ?? "https://picsum.photos/seed/placeholder/800/800"}

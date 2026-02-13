@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #000000;
+  --foreground: #ffffff;
 }
 
 html {
@@ -12,6 +12,14 @@ html {
 @keyframes satl-marquee {
   0% { transform: translate3d(0,0,0); }
   100% { transform: translate3d(-50%,0,0); }
+}
+
+@font-face {
+  font-family: "Yeast";
+  src: url("/fonts/Yeast22-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
 }
 
 
@@ -24,10 +32,10 @@ html {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #ffffff;
+    --foreground: #000000;
   }
-}
+} 
 
 body {
   background: var(--background);

@@ -8,6 +8,7 @@ const Schema = z.object({
   priceRub: z.string().min(1),
   image: z.string().optional(),
   stock: z.string().min(1),
+  isSoon: z.boolean().optional(),
   categoryId: z.string().nullable().optional(), // ✅
 });
 
@@ -20,15 +21,28 @@ export async function POST(req: Request) {
   try {
     const body = Schema.parse(await req.json());
 
-    const price = Math.round(Number(body.priceRub) * 100);
-    if (!Number.isFinite(price) || price <= 0) {
-      return Response.json({ error: "Некорректная цена" }, { status: 400 });
+    const isSoon = Boolean(body.isSoon);
+    if (isSoon) {
+      if (!body.image) {
+        return Response.json({ error: "Для режима 'Скоро' нужно загрузить фото" }, { status: 400 });
+      }
     }
 
-    const stock = Math.floor(Number(body.stock));
-    if (!Number.isFinite(stock) || stock < 0) {
-      return Response.json({ error: "Некорректный stock" }, { status: 400 });
+
+    const price = isSoon ? 0 : Math.round(Number(body.priceRub) * 100);
+    if (!isSoon) {
+      if (!Number.isFinite(price) || price <= 0) {
+        return Response.json({ error: "Некорректная цена" }, { status: 400 });
+      }
     }
+
+    const stock = isSoon ? 0 : Math.floor(Number(body.stock));
+    if (!isSoon) {
+      if (!Number.isFinite(stock) || stock < 0) {
+        return Response.json({ error: "Некорректный stock" }, { status: 400 });
+      }
+    }
+
 
     const existing = await prisma.product.findUnique({
       where: { slug: body.slug },
@@ -58,6 +72,7 @@ export async function POST(req: Request) {
           slug: body.slug,
           price,
           images: body.image ? [body.image] : [],
+          isSoon,
           categoryId: body.categoryId ?? null, // ✅
         },
         select: { id: true, slug: true },

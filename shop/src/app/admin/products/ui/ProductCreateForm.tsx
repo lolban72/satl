@@ -26,6 +26,8 @@ export default function ProductCreateForm() {
   const [slug, setSlug] = useState("");
   const [priceRub, setPriceRub] = useState("1990");
   const [stock, setStock] = useState("10");
+  const [isSoon, setIsSoon] = useState(false);
+
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState<string>("");
@@ -212,6 +214,12 @@ export default function ProductCreateForm() {
           </div>
         ) : null}
       </label>
+
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" checked={isSoon} onChange={(e) => setIsSoon(e.target.checked)} />
+        Скоро (только фото, без цены и остатков)
+      </label>
+
 
       {preview ? (
         // eslint-disable-next-line @next/next/no-img-element

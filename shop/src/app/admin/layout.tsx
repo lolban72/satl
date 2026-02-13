@@ -9,6 +9,9 @@ const nav = [
   { href: "/admin/categories", label: "Категории" },
   { href: "/admin/navigation/header", label: "Порядок в шапке" },
   { href: "/admin/navigation/home", label: "Порядок на главной" },
+
+  // ✅ Маркетинг
+  { href: "/admin/marketing/hero", label: "Hero баннер" },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -19,7 +22,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="mx-auto max-w-6xl p-6">
       <div className="mb-6 flex items-center justify-between">
         <div className="text-xl font-semibold">Админ-панель</div>
-        <Link href="/" className="text-sm text-gray-600 hover:underline">← На сайт</Link>
+        <Link href="/" className="text-sm text-gray-600 hover:underline">
+          ← На сайт
+        </Link>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
