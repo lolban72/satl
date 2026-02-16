@@ -1,27 +1,31 @@
 import "../styles/globals.css";
 import Header from "@/components/Header";
-import { Kanit } from "next/font/google";
+import Footer from "@/components/Footer";
 import TopMarquee from "@/components/TopMarquee";
-import { Brygada_1918 } from "next/font/google";
+import { Kanit, Brygada_1918 } from "next/font/google";
+import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic"; // ✅ ДОБАВЬ
 
-const brygada = Brygada_1918({
-  subsets: ["latin", "latin-ext"],
-  weight: ["500"],
-});
+const brygada = Brygada_1918({ subsets: ["latin", "latin-ext"], weight: ["500"] });
+const kanit = Kanit({ subsets: ["latin", "latin-ext"], weight: ["700", "900"] });
 
-const kanit = Kanit({
-  subsets: ["latin", "latin-ext"],
-  weight: ["700"],
-});
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const marquee = await prisma.marqueeSettings.findFirst();
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const enabled = marquee?.enabled ?? true;
+  const text = marquee?.text ?? "СКИДКИ 20%";
+  const speedSeconds = marquee?.speedSeconds ?? 100;
+
   return (
-    <html lang="ru">
-      <body className={`${kanit.className} bg-white text-black`}>
-        <TopMarquee speedSeconds={50} fontClass={brygada.className} />
+    <html lang="ru" className="h-full">
+      <body className={`min-h-screen flex flex-col bg-white text-black ${kanit.className}`}>
+        {enabled && (
+          <TopMarquee text={text} speedSeconds={speedSeconds} fontClass={brygada.className} />
+        )}
         <Header />
-        {children}
+        <main className="flex-1">{children}</main>
+        <Footer />
       </body>
     </html>
   );

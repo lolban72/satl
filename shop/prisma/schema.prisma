@@ -64,6 +64,7 @@ model Product {
   createdAt   DateTime @default(now())
   isSoon      Boolean  @default(false)
   variants    Variant[]
+  discountPercent Int @default(0)
   categoryId  String?
   category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 }
@@ -78,6 +79,16 @@ model Variant {
   sku       String  @unique
   stock     Int     @default(0)
 }
+
+model MarqueeSettings {
+  id           String   @id @default(cuid())
+  text         String   @default("СКИДКИ 20%")
+  speedSeconds Int      @default(10)
+  enabled      Boolean  @default(true)
+  updatedAt    DateTime @updatedAt
+  createdAt    DateTime @default(now())
+}
+
 
 model Order {
   id        String      @id @default(cuid())

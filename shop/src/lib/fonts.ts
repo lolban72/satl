@@ -6,3 +6,24 @@ export const yeast = localFont({
   style: "normal",
   display: "swap",
 });
+
+export const yrsaBold = localFont({
+  src: "../assets/fonts/Yrsa-Bold.ttf",
+  weight: "700",
+  style: "normal",
+  display: "swap",
+});
+
+export const kanitExtraBold = localFont({
+  src: "../assets/fonts/Kanit-ExtraBold.ttf",
+  weight: "900",
+  style: "normal",
+  display: "swap",
+});
+
+export const akonyBold = localFont({
+  src: "../assets/fonts/AKONY.ttf",
+  weight: "700",
+  style: "normal",
+  display: "swap",
+});

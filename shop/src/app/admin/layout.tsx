@@ -11,10 +11,17 @@ const nav = [
   { href: "/admin/navigation/home", label: "Порядок на главной" },
 
   // ✅ Маркетинг
-  { href: "/admin/marketing/hero", label: "Hero баннер" },
+  { href: "/admin/marketing/hero", label: "Баннер" },
+
+  // ✅ Бегущая строка
+  { href: "/admin/marquee", label: "Бегущая строка" },
 ];
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const session = await auth();
   if (!session?.user) redirect("/auth/login");
 
@@ -32,7 +39,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <div className="text-sm font-semibold">Разделы</div>
           <div className="mt-3 grid gap-2 text-sm">
             {nav.map((i) => (
-              <Link key={i.href} href={i.href} className="rounded-xl px-3 py-2 hover:bg-gray-50">
+              <Link
+                key={i.href}
+                href={i.href}
+                className="rounded-xl px-3 py-2 hover:bg-gray-50"
+              >
                 {i.label}
               </Link>
             ))}

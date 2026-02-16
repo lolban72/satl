@@ -2,98 +2,104 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 
+const VariantSchema = z.object({
+  size: z.string().min(1),
+  color: z.string().optional(),
+  stock: z.number().int().min(0),
+});
+
 const Schema = z.object({
   title: z.string().min(2),
   slug: z.string().min(2),
-  priceRub: z.string().min(1),
-  image: z.string().optional(),
-  stock: z.string().min(1),
+  description: z.string().optional(),
+
+  homeImage: z.string().min(5),
+  images: z.array(z.string()).min(1),
+
+  priceRub: z.string().optional(),
   isSoon: z.boolean().optional(),
-  categoryId: z.string().nullable().optional(), // ✅
+  discountPercent: z.number().int().min(0).max(99).optional(),
+  categoryId: z.string().nullable().optional(),
+
+  variants: z.array(VariantSchema).optional(),
 });
+
+function makeSku(slug: string, size: string, color: string) {
+  return `${slug}-${size}-${color}-${Date.now()}-${Math.random()
+    .toString(16)
+    .slice(2, 8)}`.toUpperCase();
+}
 
 export async function POST(req: Request) {
   const session = await auth();
-  if (!session?.user) {
+  if (!session?.user)
     return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
 
   try {
     const body = Schema.parse(await req.json());
-
     const isSoon = Boolean(body.isSoon);
-    if (isSoon) {
-      if (!body.image) {
-        return Response.json({ error: "Для режима 'Скоро' нужно загрузить фото" }, { status: 400 });
-      }
-    }
 
+    const price = isSoon
+      ? 0
+      : Math.round(Number(body.priceRub ?? 0) * 100);
 
-    const price = isSoon ? 0 : Math.round(Number(body.priceRub) * 100);
-    if (!isSoon) {
-      if (!Number.isFinite(price) || price <= 0) {
-        return Response.json({ error: "Некорректная цена" }, { status: 400 });
-      }
-    }
-
-    const stock = isSoon ? 0 : Math.floor(Number(body.stock));
-    if (!isSoon) {
-      if (!Number.isFinite(stock) || stock < 0) {
-        return Response.json({ error: "Некорректный stock" }, { status: 400 });
-      }
-    }
-
+    if (!isSoon && (!Number.isFinite(price) || price <= 0))
+      return Response.json({ error: "Некорректная цена" }, { status: 400 });
 
     const existing = await prisma.product.findUnique({
       where: { slug: body.slug },
-      select: { id: true },
     });
-    if (existing) {
+    if (existing)
       return Response.json({ error: "Slug уже занят" }, { status: 400 });
-    }
 
-    // ✅ проверка категории (опционально)
-    if (body.categoryId) {
-      const cat = await prisma.category.findUnique({
-        where: { id: body.categoryId },
-        select: { id: true },
-      });
-      if (!cat) {
-        return Response.json({ error: "Категория не найдена" }, { status: 400 });
-      }
-    }
-
-    const sku = `${body.slug}-one-default-${Date.now()}`.toUpperCase();
+    const imagesFinal = [
+      body.homeImage,
+      ...body.images,
+    ].filter(Boolean);
 
     const created = await prisma.$transaction(async (tx) => {
       const p = await tx.product.create({
         data: {
           title: body.title,
           slug: body.slug,
+          description: body.description ?? null,
           price,
-          images: body.image ? [body.image] : [],
+          images: imagesFinal,
           isSoon,
-          categoryId: body.categoryId ?? null, // ✅
+          discountPercent: isSoon ? 0 : body.discountPercent ?? 0,
+          categoryId: body.categoryId ?? null,
         },
-        select: { id: true, slug: true },
       });
 
-      await tx.variant.create({
-        data: {
+      if (isSoon) {
+        await tx.variant.create({
+          data: {
+            productId: p.id,
+            sku: makeSku(body.slug, "ONE", "DEFAULT"),
+            size: "ONE",
+            color: "default",
+            stock: 0,
+          },
+        });
+      } else {
+        const variants = (body.variants ?? []).map((v) => ({
           productId: p.id,
-          sku,
-          size: "one",
-          color: "default",
-          stock,
-        },
-      });
+          sku: makeSku(body.slug, v.size, v.color ?? "default"),
+          size: v.size,
+          color: v.color ?? "default",
+          stock: v.stock,
+        }));
+        await tx.variant.createMany({ data: variants });
+      }
 
       return p;
     });
 
     return Response.json({ ok: true, slug: created.slug });
   } catch (e: any) {
-    const msg = e?.issues?.[0]?.message || e?.message || "Ошибка";
-    return Response.json({ error: msg }, { status: 400 });
+    return Response.json(
+      { error: e?.issues?.[0]?.message || e?.message || "Ошибка" },
+      { status: 400 }
+    );
   }
 }

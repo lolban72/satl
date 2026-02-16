@@ -7,13 +7,20 @@ export default async function AdminDashboard() {
     prisma.category.count(),
   ]);
 
-  // ✅ безопасно: если HeroBanner ещё не добавлен/не применена миграция,
-  // админка не упадёт
+  // Hero
   let heroCount: number | null = null;
   try {
     heroCount = await prisma.heroBanner.count();
   } catch {
     heroCount = null;
+  }
+
+  // ✅ Marquee (бегущая строка)
+  let marqueeCount: number | null = null;
+  try {
+    marqueeCount = await prisma.marqueeSettings.count();
+  } catch {
+    marqueeCount = null;
   }
 
   const cards = [
@@ -41,9 +48,12 @@ export default async function AdminDashboard() {
     {
       title: "Маркетинг",
       desc: "Hero-баннер на главной (текст, кнопка, фон, включение).",
-      links: [
-        { href: "/admin/marketing/hero", label: "Hero баннер" },
-      ],
+      links: [{ href: "/admin/marketing/hero", label: "Hero баннер" }],
+    },
+    {
+      title: "Бегущая строка",
+      desc: "Текст, скорость и включение бегущей строки в шапке сайта.",
+      links: [{ href: "/admin/marquee", label: "Управление строкой" }],
     },
   ];
 
@@ -58,11 +68,22 @@ export default async function AdminDashboard() {
               {" "}· Hero баннеров: <b>{heroCount}</b>
             </>
           ) : null}
+          {marqueeCount !== null ? (
+            <>
+              {" "}· Бегущая строка: <b>{marqueeCount}</b>
+            </>
+          ) : null}
         </div>
 
         {heroCount === null ? (
           <div className="mt-2 text-xs text-gray-500">
-            HeroBanner ещё не подключён в Prisma (или не применена миграция) — пункт меню уже добавлен, но счётчик скрыт.
+            HeroBanner ещё не подключён в Prisma — пункт меню добавлен, но счётчик скрыт.
+          </div>
+        ) : null}
+
+        {marqueeCount === null ? (
+          <div className="mt-2 text-xs text-gray-500">
+            MarqueeSettings ещё не подключён в Prisma — примените миграцию.
           </div>
         ) : null}
       </div>

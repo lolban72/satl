@@ -36,9 +36,29 @@ export default async function AdminProductEditPage({
           title: product.title,
           slug: product.slug,
           price: product.price,
+          description: product.description ?? "",
+
+          // ✅ обложка (первое фото)
+          homeImage: product.images?.[0] ?? null,
+
+          // ✅ галерея (всё кроме первого)
+          galleryImages: product.images?.slice(1) ?? [],
+
+          // ✅ варианты
+          variants: product.variants.map((v) => ({
+            id: v.id,
+            size: v.size,
+            color: v.color,
+            stock: v.stock,
+          })),
+
+          // оставляю для совместимости, если где-то ещё используется
           image: product.images?.[0] ?? null,
           stock,
-          categoryId: (product as any).categoryId ?? null,
+
+          categoryId: product.categoryId ?? null,
+          isSoon: product.isSoon,
+          discountPercent: product.discountPercent ?? 0,
         }}
         categories={categories}
       />

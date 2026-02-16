@@ -6,38 +6,45 @@ type Category = {
   id: string;
   title: string;
   slug: string;
-  showInNav: boolean;
-  navOrder: number;
+  showOnHome: boolean;
+  homeOrder: number;
 };
 
-export default function HeaderNavOrderPage() {
+export default function HomeCategoriesOrderPage() {
   const [items, setItems] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   const sorted = useMemo(() => {
-    return [...items].sort((a, b) => (a.navOrder ?? 0) - (b.navOrder ?? 0) || a.title.localeCompare(b.title));
+    return [...items].sort(
+      (a, b) =>
+        (a.homeOrder ?? 0) - (b.homeOrder ?? 0) ||
+        a.title.localeCompare(b.title)
+    );
   }, [items]);
 
   async function load() {
     setErr(null);
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/categories", { cache: "no-store" });
+      const res = await fetch("/api/admin/categories", {
+        cache: "no-store",
+      });
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Не удалось загрузить категории");
+      if (!res.ok)
+        throw new Error(data?.error || "Не удалось загрузить категории");
 
       const list = (Array.isArray(data) ? data : []) as any[];
+
       setItems(
-        list
-          .map((c) => ({
-            id: c.id,
-            title: c.title,
-            slug: c.slug,
-            showInNav: Boolean(c.showInNav),
-            navOrder: Number(c.navOrder ?? 0),
-          }))
+        list.map((c) => ({
+          id: c.id,
+          title: c.title,
+          slug: c.slug,
+          showOnHome: Boolean(c.showOnHome),
+          homeOrder: Number(c.homeOrder ?? 0),
+        }))
       );
     } catch (e: any) {
       setErr(e?.message || "Ошибка");
@@ -57,35 +64,35 @@ export default function HeaderNavOrderPage() {
       body: JSON.stringify(body),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data?.error || "Не удалось сохранить");
+    if (!res.ok)
+      throw new Error(data?.error || "Не удалось сохранить");
   }
 
   async function move(index: number, dir: -1 | 1) {
-    const arr = sorted;
+    const arr = sorted.filter((c) => c.showOnHome);
     const j = index + dir;
     if (j < 0 || j >= arr.length) return;
 
-    // меняем местами navOrder
     const a = arr[index];
     const b = arr[j];
 
     const next = items.map((it) => {
-      if (it.id === a.id) return { ...it, navOrder: b.navOrder };
-      if (it.id === b.id) return { ...it, navOrder: a.navOrder };
+      if (it.id === a.id) return { ...it, homeOrder: b.homeOrder };
+      if (it.id === b.id) return { ...it, homeOrder: a.homeOrder };
       return it;
     });
+
     setItems(next);
 
     setSaving(true);
     setErr(null);
     try {
       await Promise.all([
-        patch(a.id, { navOrder: b.navOrder }),
-        patch(b.id, { navOrder: a.navOrder }),
+        patch(a.id, { homeOrder: b.homeOrder }),
+        patch(b.id, { homeOrder: a.homeOrder }),
       ]);
     } catch (e: any) {
       setErr(e?.message || "Ошибка сохранения");
-      // если хочешь — можно reload() для отката
     } finally {
       setSaving(false);
     }
@@ -95,9 +102,11 @@ export default function HeaderNavOrderPage() {
     <div className="rounded-2xl border p-4">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <div className="text-lg font-semibold">Порядок категорий в шапке</div>
+          <div className="text-lg font-semibold">
+            Порядок категорий на главной
+          </div>
           <div className="mt-1 text-sm text-gray-600">
-            Здесь меняется только порядок (navOrder). Показываются категории с showInNav=true.
+            Меняется поле homeOrder. Показываются категории с showOnHome=true.
           </div>
         </div>
 
@@ -110,9 +119,11 @@ export default function HeaderNavOrderPage() {
         </button>
       </div>
 
-      {err ? (
-        <div className="mt-4 rounded-xl border border-red-300 bg-red-50 p-3 text-sm">{err}</div>
-      ) : null}
+      {err && (
+        <div className="mt-4 rounded-xl border border-red-300 bg-red-50 p-3 text-sm">
+          {err}
+        </div>
+      )}
 
       <div className="mt-4 text-sm text-gray-600">
         {saving ? "Сохраняю изменения..." : " "}
@@ -120,12 +131,17 @@ export default function HeaderNavOrderPage() {
 
       <div className="mt-3 space-y-2">
         {sorted
-          .filter((c) => c.showInNav)
+          .filter((c) => c.showOnHome)
           .map((c, idx, arr) => (
-            <div key={c.id} className="flex items-center justify-between gap-3 rounded-xl border p-3">
+            <div
+              key={c.id}
+              className="flex items-center justify-between gap-3 rounded-xl border p-3"
+            >
               <div className="min-w-0">
                 <div className="font-medium">{c.title}</div>
-                <div className="text-xs text-gray-600">slug: {c.slug} · navOrder: {c.navOrder}</div>
+                <div className="text-xs text-gray-600">
+                  slug: {c.slug} · homeOrder: {c.homeOrder}
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
