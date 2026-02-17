@@ -5,6 +5,14 @@ import TopMarquee from "@/components/TopMarquee";
 import { Kanit, Brygada_1918 } from "next/font/google";
 import { prisma } from "@/lib/prisma";
 
+
+export const kanitBold = Kanit({
+  subsets: ["latin", "latin-ext"],
+  weight: ["700"], // Bold
+  display: "swap",
+});
+
+
 export const dynamic = "force-dynamic"; // ✅ ДОБАВЬ
 
 const brygada = Brygada_1918({ subsets: ["latin", "latin-ext"], weight: ["500"] });

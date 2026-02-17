@@ -1,6 +1,68 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { User, ShoppingBag } from "lucide-react";
+import { User, ShoppingBag, ChevronDown } from "lucide-react";
+
+function Dropdown({
+  label,
+  children,
+}: {
+  label: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="relative group">
+      {/* Trigger */}
+      <div className="inline-flex items-center gap-[8px] hover:opacity-70 transition">
+        {label}
+        <ChevronDown size={14} strokeWidth={2} className="translate-y-[1px]" />
+      </div>
+
+      {/* Panel */}
+      <div
+        className="
+          absolute left-0 top-full z-50
+          pt-[14px]
+          opacity-0 pointer-events-none translate-y-[-6px]
+          group-hover:opacity-100 group-hover:pointer-events-auto group-hover:translate-y-0
+          transition duration-200
+        "
+      >
+        <div
+          className="
+            w-[320px]
+            border border-black/15 bg-white
+            shadow-[0_18px_55px_rgba(0,0,0,0.12)]
+          "
+        >
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DropdownItem({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className="
+        block px-[18px] py-[12px]
+        text-[12px] font-semibold uppercase tracking-[0.06em]
+        text-black/80
+        hover:text-black hover:bg-black/5
+        transition
+      "
+    >
+      {children}
+    </Link>
+  );
+}
 
 export default async function Header({ className = "" }: { className?: string }) {
   const categories = await prisma.category.findMany({
@@ -9,71 +71,82 @@ export default async function Header({ className = "" }: { className?: string })
     select: { id: true, title: true, slug: true },
   });
 
+  // маршруты можешь поменять под себя
+  const infoLinks = [
+    { href: "/docs/delivery", label: "Доставка и оплата" },
+    { href: "/docs/returns", label: "Обмен и возврат" },
+    { href: "/docs/public-offer", label: "Публичная оферта" },
+    { href: "/docs/user-agreement", label: "Пользовательское соглашение" },
+    { href: "/docs/privacy-policy", label: "Политика конфиденциальности" },
+    { href: "/docs/pd-policy", label: "Политика обработки ПД" },
+  ];
+
+
   return (
     <header className={`sticky top-0 z-50 bg-white text-black ${className}`}>
       <div className="mx-auto flex h-[80px] max-w-[1440px] items-center px-[65px]">
-        {/* ЛЕВАЯ ГРУППА: ЛОГО + НАВИГАЦИЯ */}
+        {/* LEFT GROUP */}
         <div className="flex items-center gap-[100px]">
           {/* LOGO */}
-          <Link
-            href="/"
-            className="font-bold text-[65px] leading-none tracking-[-0.19em]"
-          >
+          <Link href="/" className="font-bold text-[65px] leading-none tracking-[-0.19em]">
             SATL
           </Link>
 
           {/* NAV */}
           <nav className="hidden md:flex items-center gap-[33px] font-bold text-[15px] uppercase tracking-[-0.02em]">
-            {/* ✅ КАТЕГОРИИ (КНОПКА) + DROPDOWN */}
-            <div className="relative group">
-              <Link href="/#catalog" className="hover:opacity-70 transition">
-                Категории
-              </Link>
-
-              {/* Выпадающий список: все категории */}
-              <div
-                className="
-                  absolute left-0 top-full z-50 w-[260px]
-                  opacity-0 pointer-events-none
-                  group-hover:opacity-100 group-hover:pointer-events-auto
-                  transition duration-200
-                "
-              >
-                <div className="pt-3">
-                  <div className="rounded-2xl border border-black/10 bg-white shadow-xl p-2">
-                    {categories.map((c) => (
-                      <Link
-                        key={c.id}
-                        href={`/#cat-${c.slug}`}
-                        className="block rounded-xl px-4 py-2 text-sm hover:bg-black/5 transition"
-                      >
-                        {c.title}
-                      </Link>
-                    ))}
+            {/* ✅ КАТЕГОРИИ (dropdown) */}
+            <Dropdown
+              label={
+                <Link href="/#catalog" className="hover:opacity-70 transition">
+                  Категории
+                </Link>
+              }
+            >
+              <div className="py-[6px]">
+                {categories.length === 0 ? (
+                  <div className="px-[18px] py-[12px] text-[11px] uppercase tracking-[0.08em] text-black/45">
+                    Нет категорий
                   </div>
-                </div>
+                ) : (
+                  categories.map((c, idx) => (
+                    <div key={c.id}>
+                      <DropdownItem href={`/#cat-${c.slug}`}>{c.title}</DropdownItem>
+                      {idx !== categories.length - 1 ? (
+                        <div className="h-[1px] bg-black/10 mx-[18px]" />
+                      ) : null}
+                    </div>
+                  ))
+                )}
               </div>
+            </Dropdown>
 
-            </div>
-
-            {/* ✅ КАТЕГОРИИ СТРОЧКОЙ — ОСТАВЛЯЕМ */}
+            {/* ✅ Категории строкой (оставляем как у тебя) */}
             {categories.map((c) => (
-              <Link
-                key={c.id}
-                href={`/#cat-${c.slug}`}
-                className="hover:opacity-70 transition"
-              >
+              <Link key={c.id} href={`/#cat-${c.slug}`} className="hover:opacity-70 transition">
                 {c.title}
               </Link>
             ))}
 
-            <Link href="/info" className="hover:opacity-70 transition">
-              Информация
-            </Link>
+            {/* ✅ ИНФОРМАЦИЯ (dropdown) */}
+            <Dropdown
+              label={<span className="cursor-default">Информация</span>}
+            >
+              <div className="py-[6px]">
+                {infoLinks.map((x, idx) => (
+                  <div key={x.href}>
+                    <DropdownItem href={x.href}>{x.label}</DropdownItem>
+                    {idx !== infoLinks.length - 1 ? (
+                      <div className="h-[1px] bg-black/10 mx-[18px]" />
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </Dropdown>
+
           </nav>
         </div>
 
-        {/* ПРАВАЯ ЧАСТЬ (иконки) */}
+        {/* RIGHT ICONS */}
         <div className="ml-auto flex items-center gap-[16px]">
           <Link href="/account/orders" aria-label="Профиль" className="hover:opacity-70 transition">
             <User size={34} strokeWidth={2} />

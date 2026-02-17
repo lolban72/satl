@@ -15,6 +15,11 @@ export default function AddToCart({
   const addItem = useCart((s) => s.addItem);
   const [size, setSize] = useState(variants[0]?.size);
 
+  // ✅ текущий вариант по выбранному размеру
+  const currentVariant = useMemo(() => {
+    return variants.find((v: any) => v.size === size) ?? variants[0];
+  }, [variants, size]);
+
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
   const closeTimer = useRef<number | null>(null);
@@ -27,7 +32,6 @@ export default function AddToCart({
   function startAutoClose() {
     if (closeTimer.current) window.clearTimeout(closeTimer.current);
     closeTimer.current = window.setTimeout(() => {
-      // сначала анимация ухода, потом убрать из DOM
       setClosing(true);
       window.setTimeout(() => {
         setOpen(false);
@@ -52,7 +56,6 @@ export default function AddToCart({
     }, 220);
   }
 
-  // cleanup
   useEffect(() => {
     return () => {
       if (closeTimer.current) window.clearTimeout(closeTimer.current);
@@ -68,9 +71,10 @@ export default function AddToCart({
             key={v.id}
             onClick={() => setSize(v.size)}
             className={[
-              " flex items-center justify-center h-[36px] w-[36px] border text-[20px] font-bold",
+              "flex items-center justify-center h-[36px] w-[36px] border text-[20px] font-bold",
               size === v.size ? "bg-black text-white" : "bg-white text-black",
             ].join(" ")}
+            type="button"
           >
             <div className="mt-[2px]">{v.size}</div>
           </button>
@@ -86,6 +90,8 @@ export default function AddToCart({
         onClick={() => {
           addItem({
             productId,
+            variantId: currentVariant?.id, // ✅ чтобы разные размеры не склеивались
+            size: currentVariant?.size,     // ✅ чтобы вывести на чекауте
             title,
             price,
             image,
@@ -93,6 +99,7 @@ export default function AddToCart({
           });
           openToast();
         }}
+        type="button"
       >
         ДОБАВИТЬ В КОРЗИНУ
       </button>
@@ -114,7 +121,6 @@ export default function AddToCart({
               animation: "satl-in 220ms ease-out",
             }}
             onMouseEnter={() => {
-              // пауза автозакрытия при наведении (по желанию)
               if (closeTimer.current) window.clearTimeout(closeTimer.current);
             }}
             onMouseLeave={() => {
@@ -144,7 +150,7 @@ export default function AddToCart({
               </div>
 
               {/* text */}
-              <div className="flex-">
+              <div className="">
                 <div
                   className="text-[14px] uppercase"
                   style={{ fontFamily: "Brygada", fontWeight: 700 }}

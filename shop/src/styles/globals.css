@@ -46,7 +46,7 @@ html, body {
 
 @font-face {
   font-family: "KanitExtraBold";
-  src: url("/fonts/KanitExtraBold.ttf") format("truetype");
+  src: url("/fonts/Kanit-ExtraBold.ttf") format("truetype");
   font-weight: 800;
   font-style: normal;
   font-display: swap;
@@ -71,4 +71,24 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer components {
+
+  .doc-h1 {
+    @apply text-[35px] font-bold tracking-[-0.02em];
+  }
+
+  .doc-h2 {
+    @apply text-[20px] font-semibold tracking-[-0.01em];
+  }
+
+  .doc-h3 {
+    @apply text-[15px] font-medium;
+  }
+
+  .doc-text {
+    @apply text-[13px] leading-[1.6] text-black/85;
+  }
+
 }

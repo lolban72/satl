@@ -355,7 +355,7 @@ export default function ProductCreateForm() {
       </label>
 
       <label className="grid gap-1">
-        <span className="text-sm font-medium">Цена (₽)</span>
+        <span className="text-sm font-medium">Цена (р)</span>
         <input
           className="rounded-xl border p-2"
           value={priceRub}

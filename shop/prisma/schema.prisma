@@ -11,10 +11,26 @@ model User {
   email     String   @unique
   password  String
   name      String?
-  phone   String?
-  address String?
+  phone     String?
+
+  // старое поле можно оставить для совместимости
+  address   String?
+
+  // ✅ новые поля для доставки
+  addressCountry   String?
+  addressRegion    String?
+  addressCity      String?
+  addressStreet    String?
+  addressHouse     String?
+  addressApartment String?
+  addressPostcode  String?
+  addressComment   String?
+
   createdAt DateTime @default(now())
   orders    Order[]
+
+  newsletterEnabled Boolean @default(false)
+
 }
 
 model Category {

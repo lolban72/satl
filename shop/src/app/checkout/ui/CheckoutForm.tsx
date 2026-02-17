@@ -4,16 +4,18 @@ import { useMemo, useState } from "react";
 import { useCart } from "@/lib/cart-store";
 import { useRouter } from "next/navigation";
 
+function moneyRub(cents: number) {
+  return `${(cents / 100).toFixed(0)}р`;
+}
+
 export default function CheckoutForm(props: {
   initial: { name: string; phone: string; address: string };
 }) {
   const router = useRouter();
   const { items, clear } = useCart();
 
-  const total = useMemo(
-    () => items.reduce((s, i) => s + i.price * i.qty, 0),
-    [items]
-  );
+  const total = useMemo(() => items.reduce((s, i) => s + i.price * i.qty, 0), [items]);
+  const itemsCount = useMemo(() => items.reduce((s, i) => s + i.qty, 0), [items]);
 
   const [name, setName] = useState(props.initial.name);
   const [phone, setPhone] = useState(props.initial.phone);
@@ -25,10 +27,10 @@ export default function CheckoutForm(props: {
   async function submit() {
     setErr(null);
 
-    if (items.length === 0) {
-      setErr("Корзина пуста.");
-      return;
-    }
+    if (items.length === 0) return setErr("Корзина пуста.");
+    if (!name.trim()) return setErr("Укажите имя.");
+    if (!phone.trim()) return setErr("Укажите телефон.");
+    if (!address.trim()) return setErr("Укажите адрес.");
 
     setLoading(true);
     try {
@@ -36,7 +38,7 @@ export default function CheckoutForm(props: {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          customer: { name, phone, address },
+          customer: { name: name.trim(), phone: phone.trim(), address: address.trim() },
           items: items.map((i) => ({
             productId: i.productId,
             variantId: i.variantId,
@@ -58,43 +60,177 @@ export default function CheckoutForm(props: {
   }
 
   return (
-    <div className="mx-auto max-w-3xl p-6">
-      <h1 className="text-2xl font-semibold">Оформление заказа</h1>
-
-      {err && (
-        <div className="mt-4 rounded-xl border border-red-300 bg-red-50 p-3 text-sm">
-          {err}
-        </div>
-      )}
-
-      <div className="mt-6 grid gap-4 rounded-2xl border p-4">
-        <label className="grid gap-1">
-          <span className="text-sm font-medium">Имя</span>
-          <input className="rounded-xl border p-2" value={name} onChange={(e) => setName(e.target.value)} />
-        </label>
-
-        <label className="grid gap-1">
-          <span className="text-sm font-medium">Телефон</span>
-          <input className="rounded-xl border p-2" value={phone} onChange={(e) => setPhone(e.target.value)} />
-        </label>
-
-        <label className="grid gap-1">
-          <span className="text-sm font-medium">Адрес</span>
-          <input className="rounded-xl border p-2" value={address} onChange={(e) => setAddress(e.target.value)} />
-        </label>
-
-        <div className="flex items-center justify-between pt-2">
-          <div className="text-sm text-gray-600">Итого</div>
-          <div className="text-lg font-bold">{(total / 100).toFixed(2)} ₽</div>
+    <div className="mx-auto max-w-[1440px] px-[65px] pt-[70px] pb-[140px] text-black bg-white">
+      {/* HEADER */}
+      <div className="flex items-end justify-between">
+        <div>
+          <div className="text-[26px] font-semibold tracking-[-0.02em]">Оформление</div>
         </div>
 
         <button
-          className="rounded-xl bg-black px-4 py-2 text-white disabled:opacity-50"
-          disabled={loading}
-          onClick={submit}
+          onClick={() => router.push("/cart")}
+          className="text-[11px] uppercase tracking-[0.08em] text-black/55 hover:text-black transition"
+          type="button"
         >
-          {loading ? "Оформляем..." : "Оформить заказ"}
+          Вернуться в корзину
         </button>
+      </div>
+
+      {/* ERROR */}
+      {err ? (
+        <div className="mt-[22px] border border-black/20 bg-white p-[14px] text-[12px] text-black">
+          <div className="font-semibold uppercase tracking-[0.08em] text-[10px] mb-[6px]">
+            Ошибка
+          </div>
+          {err}
+        </div>
+      ) : null}
+
+      <div className="mt-[36px] grid gap-[28px] lg:grid-cols-[1fr_420px] lg:items-start">
+        {/* LEFT: FORM */}
+        <div className="border border-black/10 p-[18px] md:p-[22px]">
+          <div className="text-[18px] font-semibold tracking-[-0.01em]">Данные получателя</div>
+          <div className="mt-[6px] text-[12px] text-black/55">
+            Мы используем эти данные для доставки.
+          </div>
+
+          <div className="mt-[18px] grid gap-[16px]">
+            {/* NAME */}
+            <label className="grid gap-[4px]">
+              <span className="text-[9px] uppercase tracking-[0.12em] text-black/55">
+                Имя
+              </span>
+              <input
+                className="h-[46px] border border-black/15 px-[14px] text-[14px] outline-none
+                           focus:border-black transition bg-white"
+                value={name}
+                style={{ fontFamily: "Brygada" }}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ваше имя"
+              />
+            </label>
+
+            {/* PHONE */}
+            <label className="grid gap-[4px]">
+              <span className="text-[9px] uppercase tracking-[0.12em] text-black/55">
+                Телефон
+              </span>
+              <input
+                className="h-[46px] border border-black/15 px-[14px] text-[14px] outline-none
+                           focus:border-black transition bg-white"
+                value={phone}
+                style={{ fontFamily: "Brygada" }}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+7 (___) ___-__-__"
+              />
+            </label>
+
+            {/* ADDRESS */}
+            <label className="grid gap-[4px]">
+              <span className="text-[9px] uppercase tracking-[0.12em] text-black/55">
+                Адрес
+              </span>
+              <input
+                className="h-[46px] border border-black/15 px-[14px] text-[14px] outline-none
+                           focus:border-black transition bg-white"
+                value={address}
+                style={{ fontFamily: "Brygada" }}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="Город, улица, дом, квартира"
+              />
+            </label>
+
+            <div>
+            {/* CTA */}
+              <button
+                className="mt-[6px] flex h-[46px] w-full items-center justify-center bg-black text-white
+                          text-[10px] font-bold uppercase tracking-[0.12em] hover:bg-black/85 transition
+                          disabled:opacity-50 disabled:hover:bg-black"
+                disabled={loading || items.length === 0}
+                onClick={submit}
+                type="button"
+              >
+                {loading ? "Оформляем..." : "Оформить заказ"}
+              </button>
+
+              <div className="text-[11px] italic leading-[1.25] text-black/45 mt-[6px]">
+                Нажимая кнопку, вы подтверждаете оформление заказа.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT: SUMMARY */}
+        <aside className="border border-black/10 p-[18px] lg:sticky lg:top-[110px] bg-white">
+          <div className="flex items-end justify-between">
+            <div className="text-[20px] font-semibold">Ваш заказ</div>
+            <div style={{ fontFamily: "Brygada" }} className="text-[12px] text-black/55">{itemsCount} шт.</div>
+          </div>
+
+          {/* items */}
+          <div className="mt-[16px] grid gap-[12px]">
+            {items.length === 0 ? (
+              <div className="border border-black/10 p-[14px] text-[12px] text-black/55">
+                В корзине нет товаров.
+              </div>
+            ) : (
+              items.map((i) => (
+                <div key={`${i.productId}-${i.variantId ?? "na"}`} className="flex gap-[12px]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={i.image ?? "https://picsum.photos/seed/cart/140/140"}
+                    alt={i.title}
+                    
+                    className="h-[70px] w-[70px] object-cover border border-black/10"
+                    draggable={false}
+                  />
+
+                  <div className="min-w-0 flex-1">
+                    <div style={{ fontFamily: "Brygada" }} className="truncate text-[12px] font-semibold uppercase tracking-[0.06em]">
+                      {String(i.title ?? "")}
+                    </div>
+
+                    <div style={{ fontFamily: "Brygada" }} className="mt-[6px] flex flex-wrap items-center gap-[10px] text-[11px] text-black/60">
+                      <span>{moneyRub(i.price)}</span>
+                      <span aria-hidden="true">•</span>
+                      <span>Кол-во: {i.qty}</span>
+                      <span aria-hidden="true">•</span>
+                      <span>Размер: {i.size ? String(i.size).toUpperCase() : "—"}</span>
+                    </div>
+                  </div>
+
+                  <div style={{ fontFamily: "Brygada" }} className="text-[12px] font-semibold whitespace-nowrap">
+                    {moneyRub(i.price * i.qty)}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="h-[1px] bg-black/10 my-[16px]" />
+
+          {/* totals */}
+          <div className="space-y-[10px] text-[12px] text-black/65">
+            <div className="flex items-center justify-between">
+              <span>Товары</span>
+              <span style={{ fontFamily: "Brygada" }} className="text-black">{moneyRub(total)}</span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span>Доставка</span>
+              <span style={{ fontFamily: "Brygada" }} className="text-black/45">Рассчитается позже</span>
+            </div>
+
+            <div className="h-[1px] bg-black/10 my-[12px]" />
+
+            <div className="flex items-center justify-between">
+              <span className="text-black/70">К оплате</span>
+              <span style={{ fontFamily: "Brygada" }} className="text-[16px] font-semibold text-black">{moneyRub(total)}</span>
+            </div>
+          </div>
+
+          {/* small back */}
+        </aside>
       </div>
     </div>
   );

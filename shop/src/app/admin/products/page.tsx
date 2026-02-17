@@ -38,7 +38,7 @@ export default async function ProductsListPage() {
                   </div>
 
                   <div className="text-right">
-                    <div className="font-semibold">{(p.price / 100).toFixed(2)} ₽</div>
+                    <div className="font-semibold">{(p.price / 100).toFixed(2)}р</div>
                     <div className="text-sm text-gray-600">stock: {stock}</div>
 
                     <Link

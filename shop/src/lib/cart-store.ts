@@ -3,11 +3,13 @@ import { create } from "zustand";
 export type CartItem = {
   productId: string;
   variantId?: string;
+  size?: string; // ✅ ДОБАВИЛИ
   title: string;
   price: number;
   image?: string;
   qty: number;
 };
+
 
 type CartState = {
   items: CartItem[];
