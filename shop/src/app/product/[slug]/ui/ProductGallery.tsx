@@ -13,27 +13,24 @@ export default function ProductGallery({
   const [active, setActive] = useState(0);
   const activeSrc = safe[active] ?? safe[0];
 
-  // ===== animations state =====
   const [displaySrc, setDisplaySrc] = useState(activeSrc);
   const [fade, setFade] = useState(false);
 
   const thumbsRef = useRef<HTMLDivElement | null>(null);
 
-  // FADE when active image changes
   useEffect(() => {
     if (!activeSrc) return;
     if (activeSrc === displaySrc) return;
 
-    setFade(true); // fade out
+    setFade(true);
     const t = window.setTimeout(() => {
-      setDisplaySrc(activeSrc); // swap
-      setFade(false); // fade in
+      setDisplaySrc(activeSrc);
+      setFade(false);
     }, 160);
 
     return () => window.clearTimeout(t);
   }, [activeSrc, displaySrc]);
 
-  // Smooth wheel scrolling (inertia) for thumbs
   useEffect(() => {
     const el = thumbsRef.current;
     if (!el) return;
@@ -43,7 +40,7 @@ export default function ProductGallery({
 
     const animate = () => {
       const current = el.scrollTop;
-      const next = current + (target - current) * 0.18; // easing
+      const next = current + (target - current) * 0.18;
       el.scrollTop = next;
 
       if (Math.abs(target - next) > 0.5) {
@@ -55,10 +52,9 @@ export default function ProductGallery({
     };
 
     const onWheel = (e: WheelEvent) => {
-      // делаем свой плавный скролл
       e.preventDefault();
       target += e.deltaY;
-      // clamp
+
       const max = el.scrollHeight - el.clientHeight;
       if (target < 0) target = 0;
       if (target > max) target = max;
@@ -74,89 +70,140 @@ export default function ProductGallery({
     };
   }, []);
 
-  // helper: smooth scroll selected thumb into view
   function scrollThumbIntoView(idx: number) {
     const root = thumbsRef.current;
     if (!root) return;
     const btn = root.querySelector<HTMLButtonElement>(`button[data-idx="${idx}"]`);
     if (!btn) return;
-    btn.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    btn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
   }
 
   if (!safe.length) return null;
 
   return (
-    <div className="flex items-start gap-[24px]">
-      {/* THUMBS (как в макете: 3 видно, остальные скролл; тонкая рамка) */}
-      <div
-        ref={thumbsRef}
-        className={[
-          "mt-[40px]", // сильнее вниз, как на рефе
-          "flex flex-col gap-[16px]",
-          "h-[480px]", // ровно под 3 миниатюры (92*3 + 16*2 = 308) + запас
-          "overflow-y-auto pr-[10px]",
-          "[&::-webkit-scrollbar]:w-0",
-          "[&::-webkit-scrollbar-thumb]:bg-transparent",
-        ].join(" ")}
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
-        {safe.map((src, idx) => {
-          const isActive = idx === active;
-          return (
-            <button
-              key={src + idx}
-              data-idx={idx}
-              type="button"
-              onClick={() => {
-                setActive(idx);
-                scrollThumbIntoView(idx);
+    <div className="flex flex-col md:flex-row items-start gap-[14px] sm:gap-[18px] md:gap-[24px]">
+      {/* MAIN IMAGE */}
+      <div className="relative w-full md:w-auto order-1 md:order-2">
+        <div className="relative h-[360px] sm:h-[440px] w-full md:h-[580px] md:w-[680px]">
+          <div
+            className="
+              pointer-events-none absolute left-1/2 top-1/2
+              h-[260px] w-[320px]
+              sm:h-[320px] sm:w-[420px]
+              md:h-[430px] md:w-[560px]
+              -translate-x-1/2 -translate-y-1/2
+              blur-[45px] md:blur-[55px]
+              opacity-55
+            "
+            style={{ backgroundColor: "#9B9B9B" }}
+            aria-hidden="true"
+          />
+
+          <div className="absolute inset-0">
+            <img
+              src={displaySrc}
+              alt={title}
+              className="h-full w-full object-contain"
+              draggable={false}
+              style={{
+                opacity: fade ? 0 : 1,
+                transform: fade ? "scale(0.985)" : "scale(1)",
+                transition: "opacity 260ms ease, transform 260ms ease",
+                willChange: "opacity, transform",
               }}
-              className={[
-                "h-[200px] w-[140px]",
-                "transition",
-                "flex items-center justify-center", // центрируем контент
-              ].join(" ")}
-              aria-label={`Фото ${idx + 1}`}
-            >
-              <img
-                src={src}
-                alt={title}
-                className="h-full w-full object-containЫ" // ✅ ключ: contain + padding
-                draggable={false}
-                style={{
-                  // микро-анимация миниатюры при выборе (не меняет классы)
-                  transform: isActive ? "scale(0.985)" : "scale(1)",
-                  transition: "transform 180ms ease",
-                }}
-              />
-            </button>
-          );
-        })}
+            />
+          </div>
+        </div>
       </div>
 
-      {/* MAIN IMAGE (как в макете: без “белого квадрата”, пятно под футболкой) */}
-      <div className="relative h-[580px] w-[680px]">
-        {/* пятно (не на весь блок, а по центру) */}
-        <div
-          className="pointer-events-none absolute left-1/2 top-1/2 h-[430px] w-[560px] -translate-x-1/2 -translate-y-1/2 blur-[55px] opacity-55"
-          style={{ backgroundColor: "#9B9B9B" }}
-          aria-hidden="true"
-        />
+      {/* THUMBS */}
+      <div className="w-full md:w-auto order-2 md:order-1">
+        {/* MOBILE: горизонтально */}
+        <div className="md:hidden">
+          <div
+            ref={thumbsRef}
+            className="
+              flex items-center gap-[10px]
+              overflow-x-auto
+              pb-[6px]
+              [&::-webkit-scrollbar]:h-0
+              [&::-webkit-scrollbar-thumb]:bg-transparent
+            "
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            {safe.map((src, idx) => {
+              const isActive = idx === active;
+              return (
+                <button
+                  key={src + idx}
+                  data-idx={idx}
+                  type="button"
+                  onClick={() => {
+                    setActive(idx);
+                    scrollThumbIntoView(idx);
+                  }}
+                  className="h-[90px] w-[70px] shrink-0 flex items-center justify-center"
+                  aria-label={`Фото ${idx + 1}`}
+                >
+                  <img
+                    src={src}
+                    alt={title}
+                    className="h-full w-full object-contain"
+                    draggable={false}
+                    style={{
+                      transform: isActive ? "scale(0.96)" : "scale(1)",
+                      transition: "transform 180ms ease",
+                      opacity: isActive ? 1 : 0.88,
+                    }}
+                  />
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-        {/* фото (прозрачный фон блока) */}
-        <div className="absolute inset-0">
-          <img
-            src={displaySrc}
-            alt={title}
-            className="h-full w-full object-contain"
-            draggable={false}
-            style={{
-              opacity: fade ? 0 : 1,
-              transform: fade ? "scale(0.985)" : "scale(1)",
-              transition: "opacity 260ms ease, transform 260ms ease",
-              willChange: "opacity, transform",
-            }}
-          />
+        {/* DESKTOP: вертикально */}
+        <div className="hidden md:block">
+          <div
+            ref={thumbsRef}
+            className={[
+              "mt-[40px]",
+              "flex flex-col gap-[16px]",
+              "h-[480px]",
+              "overflow-y-auto pr-[10px]",
+              "[&::-webkit-scrollbar]:w-0",
+              "[&::-webkit-scrollbar-thumb]:bg-transparent",
+            ].join(" ")}
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            {safe.map((src, idx) => {
+              const isActive = idx === active;
+              return (
+                <button
+                  key={src + idx}
+                  data-idx={idx}
+                  type="button"
+                  onClick={() => {
+                    setActive(idx);
+                    scrollThumbIntoView(idx);
+                  }}
+                  className="h-[200px] w-[140px] transition flex items-center justify-center"
+                  aria-label={`Фото ${idx + 1}`}
+                >
+                  <img
+                    src={src}
+                    alt={title}
+                    className="h-full w-full object-contain"
+                    draggable={false}
+                    style={{
+                      transform: isActive ? "scale(0.985)" : "scale(1)",
+                      transition: "transform 180ms ease",
+                    }}
+                  />
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

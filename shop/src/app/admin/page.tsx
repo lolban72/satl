@@ -30,6 +30,7 @@ export default async function AdminDashboard() {
       links: [
         { href: "/admin/products", label: "Список товаров" },
         { href: "/admin/products/new", label: "Добавить товар" },
+        { href: "/admin/products/size-chart", label: "Управление таблицами размеров" }, // New link for size chart management
       ],
     },
     {

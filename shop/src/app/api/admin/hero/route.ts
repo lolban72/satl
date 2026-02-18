@@ -1,50 +1,101 @@
-import { NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 
-async function getOrCreate() {
-  const existing = await prisma.heroBanner.findFirst({ orderBy: { createdAt: "asc" } });
-  if (existing) return existing;
-
-  return prisma.heroBanner.create({
-    data: {
-      enabled: true,
-      title: "Новая коллекция",
-      subtitle: "Собери образ на каждый день",
-      buttonText: "Смотреть товары",
-      buttonHref: "/#catalog",
-      overlay: 25,
-      imageUrl: null,
-    },
-  });
-}
+// ✅ title теперь НЕ обязателен: допускаем "", null, undefined
+const PatchSchema = z.object({
+  enabled: z.boolean(),
+  title: z.string().optional().nullable().default(""),
+  subtitle: z.string().optional().nullable(),
+  buttonText: z.string().optional().nullable(),
+  buttonHref: z.string().optional().nullable(),
+  imageDesktop: z.string().optional().nullable(),
+  imageMobile: z.string().optional().nullable(),
+  overlay: z.number().int().min(0).max(100),
+});
 
 export async function GET() {
-  const banner = await getOrCreate();
-  return NextResponse.json(banner);
+  const session = await auth();
+  if (!session?.user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  let banner = await prisma.heroBanner.findFirst({
+    orderBy: { createdAt: "asc" },
+  });
+
+  if (!banner) {
+    banner = await prisma.heroBanner.create({
+      data: {
+        enabled: false,
+        title: "", // ✅ пустой допустим
+        subtitle: null,
+        buttonText: null,
+        buttonHref: null,
+        imageDesktop: null,
+        imageMobile: null,
+        overlay: 25,
+      },
+    });
+  }
+
+  return Response.json(banner);
 }
 
 export async function PATCH(req: Request) {
   const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  const body = await req.json();
-  const banner = await getOrCreate();
+  try {
+    const body = PatchSchema.parse(await req.json());
 
-  const updated = await prisma.heroBanner.update({
-    where: { id: banner.id },
-    data: {
-      enabled: typeof body.enabled === "boolean" ? body.enabled : undefined,
-      title: typeof body.title === "string" ? body.title : undefined,
-      subtitle: typeof body.subtitle === "string" ? body.subtitle : undefined,
-      buttonText: typeof body.buttonText === "string" ? body.buttonText : undefined,
-      buttonHref: typeof body.buttonHref === "string" ? body.buttonHref : undefined,
-      imageUrl: typeof body.imageUrl === "string" ? body.imageUrl : undefined,
-      overlay: typeof body.overlay === "number" ? body.overlay : undefined,
-    },
-  });
+    // ✅ нормализуем строки: если пришли пробелы — считаем пустым
+    const title = (body.title ?? "").trim();
+    const subtitle = (body.subtitle ?? "").trim() || null;
+    const buttonText = (body.buttonText ?? "").trim() || null;
+    const buttonHref = (body.buttonHref ?? "").trim() || null;
 
-  revalidatePath("/"); // чтобы главная обновилась
-  return NextResponse.json(updated);
+    const existing = await prisma.heroBanner.findFirst({
+      orderBy: { createdAt: "asc" },
+      select: { id: true },
+    });
+
+    const updated = existing
+      ? await prisma.heroBanner.update({
+          where: { id: existing.id },
+          data: {
+            enabled: body.enabled,
+            title, // ✅ может быть ""
+            subtitle,
+            buttonText,
+            buttonHref,
+            imageDesktop: body.imageDesktop ?? null,
+            imageMobile: body.imageMobile ?? null,
+            overlay: body.overlay,
+          },
+        })
+      : await prisma.heroBanner.create({
+          data: {
+            enabled: body.enabled,
+            title, // ✅ может быть ""
+            subtitle,
+            buttonText,
+            buttonHref,
+            imageDesktop: body.imageDesktop ?? null,
+            imageMobile: body.imageMobile ?? null,
+            overlay: body.overlay,
+          },
+        });
+
+    revalidatePath("/");
+    revalidatePath("/admin");
+
+    return Response.json(updated);
+  } catch (e: any) {
+    const msg = e?.issues?.[0]?.message || e?.message || "Ошибка";
+    return Response.json({ error: msg }, { status: 400 });
+  }
 }

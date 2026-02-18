@@ -35,6 +35,15 @@ export default async function ProductsListPage() {
                     <div className="mt-1 text-xs text-gray-600">
                       Категория: {p.category?.title ?? "—"}
                     </div>
+                    {/* Display the size chart image if it exists */}
+                    {p.sizeChartImage && (
+                      <div className="mt-2">
+                        <span className="text-sm text-gray-600">Таблица размеров:</span>
+                        <a href={p.sizeChartImage} target="_blank" className="text-sm text-blue-500 underline ml-2">
+                          Скачать
+                        </a>
+                      </div>
+                    )}
                   </div>
 
                   <div className="text-right">

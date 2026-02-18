@@ -68,6 +68,10 @@ export default function ProductCreateForm() {
   const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
 
+  // ✅ NEW: Размерная таблица (изображение)
+  const [sizeChartFile, setSizeChartFile] = useState<File | null>(null);
+  const [sizeChartPreview, setSizeChartPreview] = useState<string>("");
+
   // ✅ Размеры (variants)
   const [sizes, setSizes] = useState<SizeRow[]>([
     { size: "S", stock: "10" },
@@ -122,6 +126,17 @@ export default function ProductCreateForm() {
     return () => urls.forEach((u) => URL.revokeObjectURL(u));
   }, [galleryFiles]);
 
+  // preview: size chart
+  useEffect(() => {
+    if (!sizeChartFile) {
+      setSizeChartPreview("");
+      return;
+    }
+    const url = URL.createObjectURL(sizeChartFile);
+    setSizeChartPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [sizeChartFile]);
+
   // если включили "Скоро" — скидка/цена/размеры не нужны
   useEffect(() => {
     if (isSoon) setDiscountPercent("0");
@@ -138,7 +153,11 @@ export default function ProductCreateForm() {
     return String(data.url || "");
   }
 
-  async function uploadAll(): Promise<{ homeUrl: string; galleryUrls: string[] }> {
+  async function uploadAll(): Promise<{
+    homeUrl: string;
+    galleryUrls: string[];
+    sizeChartUrl: string | null;
+  }> {
     setUploading(true);
     try {
       const homeUrl = homeFile ? await uploadOne(homeFile) : "";
@@ -149,7 +168,9 @@ export default function ProductCreateForm() {
         if (url) galleryUrls.push(url);
       }
 
-      return { homeUrl, galleryUrls };
+      const sizeChartUrl = sizeChartFile ? await uploadOne(sizeChartFile) : null;
+
+      return { homeUrl, galleryUrls, sizeChartUrl };
     } finally {
       setUploading(false);
     }
@@ -218,7 +239,7 @@ export default function ProductCreateForm() {
     setLoading(true);
     try {
       // 1) upload
-      const { homeUrl, galleryUrls } = await uploadAll();
+      const { homeUrl, galleryUrls, sizeChartUrl } = await uploadAll();
       if (!homeUrl) throw new Error("Не удалось загрузить фото на главную");
       if (!galleryUrls.length) throw new Error("Не удалось загрузить фото галереи");
 
@@ -231,9 +252,11 @@ export default function ProductCreateForm() {
         description: description.trim() || undefined,
 
         // ✅ обложка + галерея
-        // если в БД поле называется иначе — скажи, переименую
-        homeImage: homeUrl, // <-- фото на главную (обложка)
-        images: galleryUrls, // <-- фото галереи (массив)
+        homeImage: homeUrl, // фото на главную (обложка)
+        images: galleryUrls, // фото галереи (массив)
+
+        // ✅ NEW: размерная таблица
+        sizeChartImage: sizeChartUrl, // string | null
       };
 
       if (!isSoon) {
@@ -277,6 +300,8 @@ export default function ProductCreateForm() {
 
       setHomeFile(null);
       setGalleryFiles([]);
+
+      setSizeChartFile(null);
 
       setSizes([
         { size: "S", stock: "10" },
@@ -423,23 +448,35 @@ export default function ProductCreateForm() {
         </div>
       ) : null}
 
+      {/* ✅ NEW: Размерная таблица */}
+      <label className="grid gap-1">
+        <span className="text-sm font-medium">Размерная таблица (картинка, необязательно)</span>
+        <input
+          type="file"
+          accept="image/*"
+          className="rounded-xl border p-2"
+          onChange={(e) => setSizeChartFile(e.target.files?.[0] ?? null)}
+        />
+        <div className="text-xs text-gray-600">
+          Будет показываться на странице товара по кнопке «Таблица размеров».
+        </div>
+      </label>
+
+      {sizeChartPreview ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={sizeChartPreview} alt="size chart preview" className="h-40 w-40 rounded-xl border object-cover" />
+      ) : null}
+
       {/* ✅ Размеры */}
       <div className="rounded-xl border p-3">
         <div className="flex items-center justify-between">
           <div className="text-sm font-medium">Размеры</div>
-          <button
-            type="button"
-            className="text-sm underline"
-            onClick={addSizeRow}
-            disabled={isSoon}
-          >
+          <button type="button" className="text-sm underline" onClick={addSizeRow} disabled={isSoon}>
             + Добавить размер
           </button>
         </div>
 
-        {isSoon ? (
-          <div className="mt-2 text-xs text-gray-600">В режиме "Скоро" размеры не нужны.</div>
-        ) : null}
+        {isSoon ? <div className="mt-2 text-xs text-gray-600">В режиме "Скоро" размеры не нужны.</div> : null}
 
         <div className="mt-3 grid gap-2">
           {sizes.map((row, idx) => (
@@ -473,11 +510,7 @@ export default function ProductCreateForm() {
         </div>
       </div>
 
-      <button
-        className="rounded-xl bg-black px-4 py-2 text-white disabled:opacity-50"
-        disabled={disableSubmit}
-        onClick={submit}
-      >
+      <button className="rounded-xl bg-black px-4 py-2 text-white disabled:opacity-50" disabled={disableSubmit} onClick={submit}>
         {uploading ? "Загружаю фото..." : loading ? "Создаю..." : "Добавить"}
       </button>
 

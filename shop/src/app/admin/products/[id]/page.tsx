@@ -44,6 +44,9 @@ export default async function AdminProductEditPage({
           // ✅ галерея (всё кроме первого)
           galleryImages: product.images?.slice(1) ?? [],
 
+          // ✅ NEW: размерная таблица (картинка)
+          sizeChartImage: product.sizeChartImage ?? null,
+
           // ✅ варианты
           variants: product.variants.map((v) => ({
             id: v.id,

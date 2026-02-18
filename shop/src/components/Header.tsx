@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { User, ShoppingBag, ChevronDown } from "lucide-react";
+import MobileNav from "@/components/header/MobileNav"; // путь подстрой под себя
+import { auth } from "@/auth"; // ✅ ДОБАВИЛИ
 
 function Dropdown({
   label,
@@ -11,13 +13,11 @@ function Dropdown({
 }) {
   return (
     <div className="relative group">
-      {/* Trigger */}
       <div className="inline-flex items-center gap-[8px] hover:opacity-70 transition">
         {label}
         <ChevronDown size={14} strokeWidth={2} className="translate-y-[1px]" />
       </div>
 
-      {/* Panel */}
       <div
         className="
           absolute left-0 top-full z-50
@@ -65,13 +65,14 @@ function DropdownItem({
 }
 
 export default async function Header({ className = "" }: { className?: string }) {
+  const session = await auth(); // ✅ ДОБАВИЛИ
+
   const categories = await prisma.category.findMany({
     where: { showInNav: true, products: { some: {} } },
     orderBy: [{ navOrder: "asc" }, { title: "asc" }],
     select: { id: true, title: true, slug: true },
   });
 
-  // маршруты можешь поменять под себя
   const infoLinks = [
     { href: "/docs/delivery", label: "Доставка и оплата" },
     { href: "/docs/returns", label: "Обмен и возврат" },
@@ -81,20 +82,29 @@ export default async function Header({ className = "" }: { className?: string })
     { href: "/docs/pd-policy", label: "Политика обработки ПД" },
   ];
 
-
   return (
     <header className={`sticky top-0 z-50 bg-white text-black ${className}`}>
-      <div className="mx-auto flex h-[80px] max-w-[1440px] items-center px-[65px]">
+      <div
+        className="
+          mx-auto flex h-[80px] max-w-[1440px] items-center
+          px-[16px] md:px-[65px]
+        "
+      >
         {/* LEFT GROUP */}
-        <div className="flex items-center gap-[100px]">
+        <div className="flex items-center gap-[14px] md:gap-[100px]">
           {/* LOGO */}
-          <Link href="/" className="font-bold text-[65px] leading-none tracking-[-0.19em]">
+          <Link
+            href="/"
+            className="
+              font-bold leading-none tracking-[-0.19em]
+              text-[60px] md:text-[65px]
+            "
+          >
             SATL
           </Link>
 
-          {/* NAV */}
+          {/* DESKTOP NAV */}
           <nav className="hidden md:flex items-center gap-[33px] font-bold text-[15px] uppercase tracking-[-0.02em]">
-            {/* ✅ КАТЕГОРИИ (dropdown) */}
             <Dropdown
               label={
                 <Link href="/#catalog" className="hover:opacity-70 transition">
@@ -120,17 +130,13 @@ export default async function Header({ className = "" }: { className?: string })
               </div>
             </Dropdown>
 
-            {/* ✅ Категории строкой (оставляем как у тебя) */}
             {categories.map((c) => (
               <Link key={c.id} href={`/#cat-${c.slug}`} className="hover:opacity-70 transition">
                 {c.title}
               </Link>
             ))}
 
-            {/* ✅ ИНФОРМАЦИЯ (dropdown) */}
-            <Dropdown
-              label={<span className="cursor-default">Информация</span>}
-            >
+            <Dropdown label={<span className="cursor-default">Информация</span>}>
               <div className="py-[6px]">
                 {infoLinks.map((x, idx) => (
                   <div key={x.href}>
@@ -142,19 +148,25 @@ export default async function Header({ className = "" }: { className?: string })
                 ))}
               </div>
             </Dropdown>
-
           </nav>
         </div>
 
         {/* RIGHT ICONS */}
-        <div className="ml-auto flex items-center gap-[16px]">
+        <div className="ml-auto flex items-center gap-[18px] md:gap-[16px]">
           <Link href="/account/orders" aria-label="Профиль" className="hover:opacity-70 transition">
-            <User size={34} strokeWidth={2} />
+            <User size={30} strokeWidth={2} />
           </Link>
 
           <Link href="/cart" aria-label="Корзина" className="hover:opacity-70 transition">
-            <ShoppingBag size={34} strokeWidth={2} />
+            <ShoppingBag size={30} strokeWidth={2} />
           </Link>
+
+          {/* MOBILE MENU */}
+          <MobileNav
+            categories={categories}
+            infoLinks={infoLinks}
+            isAuthed={!!session?.user} // ✅ теперь session существует
+          />
         </div>
       </div>
     </header>

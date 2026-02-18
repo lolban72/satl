@@ -4,18 +4,32 @@ import { useEffect, useState } from "react";
 
 type Banner = {
   enabled: boolean;
-  title: string;
+  title?: string | null;
   subtitle?: string | null;
   buttonText?: string | null;
   buttonHref?: string | null;
-  imageUrl?: string | null;
+  imageDesktop?: string | null;
+  imageMobile?: string | null;
   overlay: number;
 };
 
+function trim(v: any) {
+  return String(v ?? "").trim();
+}
+
+function toNull(v: any) {
+  const s = trim(v);
+  return s.length ? s : null;
+}
+
 export default function HeroBannerEditor() {
   const [b, setB] = useState<Banner | null>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string>("");
+
+  const [fileDesktop, setFileDesktop] = useState<File | null>(null);
+  const [fileMobile, setFileMobile] = useState<File | null>(null);
+
+  const [previewDesktop, setPreviewDesktop] = useState<string>("");
+  const [previewMobile, setPreviewMobile] = useState<string>("");
 
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -38,18 +52,31 @@ export default function HeroBannerEditor() {
   }, []);
 
   useEffect(() => {
-    if (!file) { setPreview(""); return; }
-    const url = URL.createObjectURL(file);
-    setPreview(url);
+    if (!fileDesktop) {
+      setPreviewDesktop("");
+      return;
+    }
+    const url = URL.createObjectURL(fileDesktop);
+    setPreviewDesktop(url);
     return () => URL.revokeObjectURL(url);
-  }, [file]);
+  }, [fileDesktop]);
 
-  async function upload(): Promise<string> {
-    if (!file) return "";
+  useEffect(() => {
+    if (!fileMobile) {
+      setPreviewMobile("");
+      return;
+    }
+    const url = URL.createObjectURL(fileMobile);
+    setPreviewMobile(url);
+    return () => URL.revokeObjectURL(url);
+  }, [fileMobile]);
+
+  async function upload(file: File): Promise<string> {
     setUploading(true);
     try {
       const fd = new FormData();
       fd.append("file", file);
+
       const res = await fetch("/api/upload", { method: "POST", body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Не удалось загрузить фото");
@@ -61,26 +88,50 @@ export default function HeroBannerEditor() {
 
   async function save() {
     if (!b) return;
+
     setErr(null);
     setOk(null);
     setSaving(true);
+
     try {
-      let imageUrl = b.imageUrl ?? "";
-      if (file) imageUrl = await upload();
+      // ✅ title теперь НЕ обязателен: может быть ""
+      const title = trim(b.title); // отправим строкой, даже если пусто
+
+      let imageDesktop = toNull(b.imageDesktop);
+      let imageMobile = toNull(b.imageMobile);
+
+      if (fileDesktop) {
+        const url = await upload(fileDesktop);
+        imageDesktop = url || null;
+      }
+      if (fileMobile) {
+        const url = await upload(fileMobile);
+        imageMobile = url || null;
+      }
+
+      const payload = {
+        enabled: !!b.enabled,
+        title, // ✅ может быть ""
+        subtitle: toNull(b.subtitle),
+        buttonText: toNull(b.buttonText),
+        buttonHref: toNull(b.buttonHref),
+        imageDesktop,
+        imageMobile,
+        overlay: Number.isFinite(Number(b.overlay)) ? Number(b.overlay) : 25,
+      };
 
       const res = await fetch("/api/admin/hero", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...b,
-          imageUrl,
-        }),
+        body: JSON.stringify(payload),
       });
+
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Не удалось сохранить");
 
       setB(data);
-      setFile(null);
+      setFileDesktop(null);
+      setFileMobile(null);
       setOk("Сохранено ✅");
     } catch (e: any) {
       setErr(e?.message || "Ошибка");
@@ -93,37 +144,65 @@ export default function HeroBannerEditor() {
 
   return (
     <div className="grid gap-3">
-      {err && <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-sm">{err}</div>}
-      {ok && <div className="rounded-xl border border-green-300 bg-green-50 p-3 text-sm">{ok}</div>}
+      {err && (
+        <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-sm">
+          {err}
+        </div>
+      )}
+      {ok && (
+        <div className="rounded-xl border border-green-300 bg-green-50 p-3 text-sm">
+          {ok}
+        </div>
+      )}
 
       <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"
-          checked={b.enabled}
+          checked={!!b.enabled}
           onChange={(e) => setB({ ...b, enabled: e.target.checked })}
         />
         Включить баннер
       </label>
 
       <label className="grid gap-1">
-        <span className="text-sm font-medium">Заголовок</span>
-        <input className="rounded-xl border p-2" value={b.title} onChange={(e) => setB({ ...b, title: e.target.value })} />
+        <span className="text-sm font-medium">Заголовок (необязательно)</span>
+        <input
+          className="rounded-xl border p-2"
+          value={b.title ?? ""}
+          onChange={(e) => setB({ ...b, title: e.target.value })}
+          placeholder="Можно оставить пустым"
+        />
       </label>
 
       <label className="grid gap-1">
         <span className="text-sm font-medium">Подзаголовок</span>
-        <input className="rounded-xl border p-2" value={b.subtitle ?? ""} onChange={(e) => setB({ ...b, subtitle: e.target.value })} />
+        <input
+          className="rounded-xl border p-2"
+          value={b.subtitle ?? ""}
+          onChange={(e) => setB({ ...b, subtitle: e.target.value })}
+          placeholder="(необязательно)"
+        />
       </label>
 
       <div className="grid gap-3 md:grid-cols-2">
         <label className="grid gap-1">
           <span className="text-sm font-medium">Текст кнопки</span>
-          <input className="rounded-xl border p-2" value={b.buttonText ?? ""} onChange={(e) => setB({ ...b, buttonText: e.target.value })} />
+          <input
+            className="rounded-xl border p-2"
+            value={b.buttonText ?? ""}
+            onChange={(e) => setB({ ...b, buttonText: e.target.value })}
+            placeholder="(необязательно)"
+          />
         </label>
 
         <label className="grid gap-1">
           <span className="text-sm font-medium">Ссылка кнопки</span>
-          <input className="rounded-xl border p-2" value={b.buttonHref ?? ""} onChange={(e) => setB({ ...b, buttonHref: e.target.value })} />
+          <input
+            className="rounded-xl border p-2"
+            value={b.buttonHref ?? ""}
+            onChange={(e) => setB({ ...b, buttonHref: e.target.value })}
+            placeholder="/#catalog"
+          />
         </label>
       </div>
 
@@ -132,30 +211,79 @@ export default function HeroBannerEditor() {
         <input
           type="number"
           className="rounded-xl border p-2"
-          value={b.overlay}
+          value={Number.isFinite(Number(b.overlay)) ? Number(b.overlay) : 25}
+          min={0}
+          max={100}
           onChange={(e) => setB({ ...b, overlay: Number(e.target.value) })}
         />
       </label>
 
-      <label className="grid gap-1">
-        <span className="text-sm font-medium">Фоновое изображение</span>
-        <input type="file" accept="image/*" className="rounded-xl border p-2" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-      </label>
+      <div className="grid gap-3 md:grid-cols-2">
+        <label className="grid gap-1">
+          <span className="text-sm font-medium">Фоновое изображение (ПК)</span>
+          <input
+            type="file"
+            accept="image/*"
+            className="rounded-xl border p-2"
+            onChange={(e) => setFileDesktop(e.target.files?.[0] ?? null)}
+          />
+        </label>
 
-      <div className="flex flex-wrap gap-4">
-        <div className="grid gap-1">
-          <div className="text-xs text-gray-600">Текущее</div>
+        <label className="grid gap-1">
+          <span className="text-sm font-medium">Фоновое изображение (Телефон)</span>
+          <input
+            type="file"
+            accept="image/*"
+            className="rounded-xl border p-2"
+            onChange={(e) => setFileMobile(e.target.files?.[0] ?? null)}
+          />
+        </label>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-2xl border p-3">
+          <div className="text-xs text-gray-600">ПК — текущее</div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={b.imageUrl ?? "https://picsum.photos/seed/hero/600/400"} alt="" className="h-32 w-52 rounded-xl border object-cover" />
+          <img
+            src={b.imageDesktop ?? "https://picsum.photos/seed/hero-desktop/900/500"}
+            alt=""
+            className="mt-2 h-36 w-full rounded-xl border object-cover"
+          />
+
+          {previewDesktop ? (
+            <>
+              <div className="mt-3 text-xs text-gray-600">ПК — новое</div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={previewDesktop}
+                alt=""
+                className="mt-2 h-36 w-full rounded-xl border object-cover"
+              />
+            </>
+          ) : null}
         </div>
 
-        {preview ? (
-          <div className="grid gap-1">
-            <div className="text-xs text-gray-600">Новое</div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={preview} alt="" className="h-32 w-52 rounded-xl border object-cover" />
-          </div>
-        ) : null}
+        <div className="rounded-2xl border p-3">
+          <div className="text-xs text-gray-600">Телефон — текущее</div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={b.imageMobile ?? "https://picsum.photos/seed/hero-mobile/600/900"}
+            alt=""
+            className="mt-2 h-36 w-full rounded-xl border object-cover"
+          />
+
+          {previewMobile ? (
+            <>
+              <div className="mt-3 text-xs text-gray-600">Телефон — новое</div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={previewMobile}
+                alt=""
+                className="mt-2 h-36 w-full rounded-xl border object-cover"
+              />
+            </>
+          ) : null}
+        </div>
       </div>
 
       <button
@@ -165,6 +293,10 @@ export default function HeroBannerEditor() {
       >
         {uploading ? "Загружаю..." : saving ? "Сохраняю..." : "Сохранить"}
       </button>
+
+      <div className="text-xs text-gray-500">
+        Пустые поля (подзаголовок/кнопка/ссылки) сохраняются как <b>null</b>. Заголовок может быть пустым.
+      </div>
     </div>
   );
 }

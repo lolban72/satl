@@ -11,7 +11,7 @@ function buildSatlLine(count: number) {
 export default function Footer() {
   const [count, setCount] = useState(6);
 
-  // ✅ subscribe state
+  // subscribe state
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [subOk, setSubOk] = useState<string | null>(null);
@@ -57,7 +57,8 @@ export default function Footer() {
   return (
     <footer className="bg-white text-black mt-[120px] flex flex-col">
       {/* ===== ВЕРХ ФУТЕРА ===== */}
-      <div className="mx-auto w-full max-w-[1440px] px-[15px]">
+      {/* ❗ На мобилке скрываем полностью */}
+      <div className="hidden md:block mx-auto w-full max-w-[1440px] px-[15px]">
         <div className="grid grid-cols-12 items-start">
           {/* Покупателям */}
           <div className="col-span-5">
@@ -70,11 +71,9 @@ export default function Footer() {
                 <Link href="/docs/user-agreement" className="hover:text-black transition">
                   пользовательское соглашение
                 </Link>
-
                 <Link href="/docs/pd-policy" className="hover:text-black transition">
                   политика обработки персональных данных
                 </Link>
-
                 <Link href="/docs/privacy-policy" className="hover:text-black transition">
                   политика конфиденциальности
                 </Link>
@@ -84,18 +83,15 @@ export default function Footer() {
                 <Link href="/docs/delivery" className="hover:text-black transition">
                   доставка и оплата
                 </Link>
-
                 <Link href="/docs/returns" className="hover:text-black transition">
                   обмен и возврат
                 </Link>
-
                 <Link href="/docs/public-offer" className="hover:text-black transition">
                   публичная оферта
                 </Link>
               </div>
             </div>
           </div>
-
 
           {/* Контакты */}
           <div className="col-span-3">
@@ -105,26 +101,18 @@ export default function Footer() {
 
             <div className="mt-[10px] flex gap-x-[48px]">
               <div className="flex flex-col gap-y-[6px] text-[9px] leading-[1.2] uppercase tracking-[0.02em] text-black/80">
-                <a href="#" className="hover:text-black transition">
-                  телеграм
-                </a>
-                <a href="#" className="hover:text-black transition">
-                  почта
-                </a>
-                <a href="#" className="hover:text-black transition">
-                  вк
-                </a>
+                <a href="#" className="hover:text-black transition">телеграм</a>
+                <a href="#" className="hover:text-black transition">почта</a>
+                <a href="#" className="hover:text-black transition">вк</a>
               </div>
 
               <div className="flex flex-col gap-y-[6px] text-[9px] leading-[1.2] uppercase tracking-[0.02em] text-black/80">
-                <a href="#" className="hover:text-black transition">
-                  тикток
-                </a>
+                <a href="#" className="hover:text-black transition">тикток</a>
               </div>
             </div>
           </div>
 
-          {/* ✅ Подписка */}
+          {/* Подписка */}
           <div className="col-span-4">
             <div className="font-bold italic text-[20px] leading-none tracking-[-0.05em]">
               Подписаться на рассылку
@@ -136,16 +124,13 @@ export default function Footer() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Ваш E-mail*"
                 className="
-                  h-[32px]
-                  w-[220px]
+                  h-[32px] w-[220px]
                   border border-[#BFBFBF]
                   px-[10px]
-                  text-[11px]
-                  tracking-[0.02em]
+                  text-[11px] tracking-[0.02em]
                   outline-none
                   placeholder:text-black/50
-                  focus:border-black
-                  transition
+                  focus:border-black transition
                 "
               />
 
@@ -154,19 +139,12 @@ export default function Footer() {
                 disabled={submitting}
                 onClick={subscribe}
                 className="
-                  h-[32px]
-                  px-[28px]
-                  bg-black
-                  text-white
-                  text-[11px]
-                  font-bold
-                  uppercase
-                  tracking-[0.02em]
-                  transition
-                  hover:bg-[#111]
+                  h-[32px] px-[28px]
+                  bg-black text-white
+                  text-[11px] font-bold uppercase tracking-[0.02em]
+                  transition hover:bg-[#111]
                   active:scale-[0.98]
-                  disabled:opacity-40
-                  disabled:cursor-not-allowed
+                  disabled:opacity-40 disabled:cursor-not-allowed
                 "
               >
                 {submitting ? "..." : "подписаться"}
@@ -204,23 +182,25 @@ export default function Footer() {
               </div>
             )}
           </div>
-
         </div>
       </div>
 
       {/* ===== НИЖНИЙ SATL ===== */}
+      {/* ===== НИЖНИЙ SATL ===== */}
       <div className="mt-auto w-full overflow-hidden">
         <div
-          className={`${akonyBold.className} whitespace-nowrap uppercase leading-none`}
-          style={{
-            fontSize: 100,
-            letterSpacing: "-0.19em",
-            transform: "translateY(22px)",
-          }}
+          className={`
+            ${akonyBold.className}
+            whitespace-nowrap uppercase leading-none
+            text-[60px] md:text-[100px]   // 👈 меньше на телефоне
+            tracking-[-0.30em]
+            translate-y-[14px] md:translate-y-[22px]
+          `}
         >
           {line}
         </div>
       </div>
+
     </footer>
   );
 }

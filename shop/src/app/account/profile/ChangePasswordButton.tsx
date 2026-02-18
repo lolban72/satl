@@ -3,7 +3,11 @@
 import { useState } from "react";
 import ChangePasswordModal from "../ui/ChangePasswordModal";
 
-export default function ChangePasswordButton() {
+export default function ChangePasswordButton({
+  className = "",
+}: {
+  className?: string;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -11,7 +15,13 @@ export default function ChangePasswordButton() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="h-[30px] w-[180px] bg-black text-white flex items-center justify-center text-[10px] font-bold uppercase tracking-[0.12em] hover:bg-black/85 transition"
+        className={`
+          bg-black text-white
+          flex items-center justify-center
+          text-[12px] font-semibold uppercase tracking-[0.02em]
+          transition hover:bg-black/85
+          ${className}
+        `}
       >
         Сменить пароль
       </button>

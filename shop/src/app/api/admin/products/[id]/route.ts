@@ -22,7 +22,7 @@ export async function PATCH(
 
   const imagesFinal =
     body.homeImage || body.images
-      ? [body.homeImage, ...(body.images ?? [])].filter(Boolean)
+      ? ([body.homeImage, ...(body.images ?? [])].filter(Boolean) as string[])
       : undefined;
 
   const price =
@@ -37,18 +37,22 @@ export async function PATCH(
         title: body.title ?? undefined,
         slug: body.slug ?? undefined,
         description: body.description ?? undefined,
-        categoryId:
-          body.categoryId === undefined ? undefined : body.categoryId,
+        categoryId: body.categoryId === undefined ? undefined : body.categoryId,
+
         images: imagesFinal,
+
         isSoon: body.isSoon ?? undefined,
-        price:
-          body.isSoon === true
-            ? 0
-            : price ?? undefined,
+
+        price: body.isSoon === true ? 0 : price ?? undefined,
+
         discountPercent:
-          body.isSoon === true
-            ? 0
-            : body.discountPercent ?? undefined,
+          body.isSoon === true ? 0 : body.discountPercent ?? undefined,
+
+        // ✅ NEW: размерная таблица (картинка)
+        // Если поле не прислали — не трогаем (undefined)
+        // Если прислали null — очищаем
+        sizeChartImage:
+          body.sizeChartImage === undefined ? undefined : body.sizeChartImage,
       },
     });
 
@@ -63,7 +67,10 @@ export async function PATCH(
         stock: v.stock,
       }));
 
-      await tx.variant.createMany({ data: variants });
+      // на всякий случай — если пришёл пустой массив, просто не создаём
+      if (variants.length) {
+        await tx.variant.createMany({ data: variants });
+      }
     }
 
     return p;

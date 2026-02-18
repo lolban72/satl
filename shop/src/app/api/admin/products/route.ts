@@ -8,13 +8,14 @@ const VariantSchema = z.object({
   stock: z.number().int().min(0),
 });
 
-const Schema = z.object({
+const BaseSchema = z.object({
   title: z.string().min(2),
   slug: z.string().min(2),
   description: z.string().optional(),
 
-  homeImage: z.string().min(5),
-  images: z.array(z.string()).min(1),
+  // ✅ делаем optional — дальше валидируем условиями
+  homeImage: z.string().optional(),
+  images: z.array(z.string()).optional(),
 
   priceRub: z.string().optional(),
   isSoon: z.boolean().optional(),
@@ -22,6 +23,58 @@ const Schema = z.object({
   categoryId: z.string().nullable().optional(),
 
   variants: z.array(VariantSchema).optional(),
+
+  // ✅ размерная таблица (картинка)
+  sizeChartImage: z.string().nullable().optional(),
+});
+
+const Schema = BaseSchema.superRefine((body, ctx) => {
+  const isSoon = Boolean(body.isSoon);
+
+  // ===== "СКОРО" =====
+  // Требуем хотя бы одну картинку (homeImage или images[0])
+  if (isSoon) {
+    const hasImage = Boolean(body.homeImage) || Boolean(body.images?.[0]);
+    if (!hasImage) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["homeImage"],
+        message: "Для режима 'Скоро' нужно загрузить фото",
+      });
+    }
+    return;
+  }
+
+  // ===== Обычный товар =====
+  if (!body.homeImage) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["homeImage"],
+      message: "Фото для карточки обязательно",
+    });
+  }
+
+  if (!body.images || body.images.length === 0) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["images"],
+      message: "Нужно добавить хотя бы 1 фото",
+    });
+  }
+
+  if (!body.priceRub) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["priceRub"],
+      message: "Цена обязательна",
+    });
+  }
+
+  // variants опциональны — но если пришли, то минимум 1 вариант (по желанию)
+  // Если хочешь требовать варианты всегда для не-soon — раскомментируй:
+  // if (!body.variants || body.variants.length === 0) {
+  //   ctx.addIssue({ code: "custom", path: ["variants"], message: "Нужно добавить хотя бы 1 вариант" });
+  // }
 });
 
 function makeSku(slug: string, size: string, color: string) {
@@ -39,23 +92,24 @@ export async function POST(req: Request) {
     const body = Schema.parse(await req.json());
     const isSoon = Boolean(body.isSoon);
 
-    const price = isSoon
-      ? 0
-      : Math.round(Number(body.priceRub ?? 0) * 100);
+    const price = isSoon ? 0 : Math.round(Number(body.priceRub ?? 0) * 100);
 
-    if (!isSoon && (!Number.isFinite(price) || price <= 0))
+    if (!isSoon && (!Number.isFinite(price) || price <= 0)) {
       return Response.json({ error: "Некорректная цена" }, { status: 400 });
+    }
 
     const existing = await prisma.product.findUnique({
       where: { slug: body.slug },
     });
-    if (existing)
-      return Response.json({ error: "Slug уже занят" }, { status: 400 });
 
-    const imagesFinal = [
-      body.homeImage,
-      ...body.images,
-    ].filter(Boolean);
+    if (existing) {
+      return Response.json({ error: "Slug уже занят" }, { status: 400 });
+    }
+
+    // ✅ safe сборка массива картинок (не падает, если images undefined)
+    const imagesFinal = [body.homeImage, ...(body.images ?? [])].filter(
+      Boolean
+    ) as string[];
 
     const created = await prisma.$transaction(async (tx) => {
       const p = await tx.product.create({
@@ -67,7 +121,10 @@ export async function POST(req: Request) {
           images: imagesFinal,
           isSoon,
           discountPercent: isSoon ? 0 : body.discountPercent ?? 0,
-          categoryId: body.categoryId ?? null,
+          category: body.categoryId ? { connect: { id: body.categoryId } } : null,
+
+          // ✅ размерная таблица
+          sizeChartImage: body.sizeChartImage ?? null,
         },
       });
 
@@ -89,7 +146,10 @@ export async function POST(req: Request) {
           color: v.color ?? "default",
           stock: v.stock,
         }));
-        await tx.variant.createMany({ data: variants });
+
+        if (variants.length) {
+          await tx.variant.createMany({ data: variants });
+        }
       }
 
       return p;

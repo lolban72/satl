@@ -4,7 +4,14 @@ export default function DeliveryPage() {
   return (
     <div className="bg-white text-black">
       <main
-        className={`${kanitBold.className} mx-auto max-w-[1440px] px-[65px] pt-[65px] pb-[120px] font-bold`}
+        className={[
+          kanitBold.className,
+          "mx-auto max-w-[1440px] font-bold",
+          // ✅ mobile
+          "px-[14px] pt-[22px] pb-[70px]",
+          // ✅ desktop (как было)
+          "md:px-[65px] md:pt-[65px] md:pb-[120px]",
+        ].join(" ")}
       >
         {/* TITLE */}
         <h1 className="doc-h1 uppercase">
@@ -12,10 +19,17 @@ export default function DeliveryPage() {
         </h1>
 
         {/* BODY */}
-        <div className="mt-[26px] max-w-[920px] doc-text">
-
+        <div
+          className={[
+            // ✅ mobile — уже, чтобы текст не растягивался и лучше читался
+            "mt-[18px] max-w-[720px]",
+            // ✅ desktop (как было)
+            "md:mt-[26px] md:max-w-[920px]",
+            "doc-text",
+          ].join(" ")}
+        >
           {/* 1 */}
-          <section className="mt-[16px]">
+          <section className="mt-[14px] md:mt-[16px]">
             <div className="doc-h2">1. Общие положения</div>
 
             <p className="mt-[10px] doc-h3">
@@ -32,7 +46,7 @@ export default function DeliveryPage() {
           </section>
 
           {/* 2 */}
-          <section className="mt-[18px]">
+          <section className="mt-[16px] md:mt-[18px]">
             <div className="doc-h2">2. Способы оплаты</div>
 
             <p className="mt-[10px] doc-h3">
@@ -67,7 +81,7 @@ export default function DeliveryPage() {
           </section>
 
           {/* 3 */}
-          <section className="mt-[18px]">
+          <section className="mt-[16px] md:mt-[18px]">
             <div className="doc-h2">3. Подтверждение оплаты</div>
 
             <p className="mt-[10px] doc-h3">
@@ -83,7 +97,7 @@ export default function DeliveryPage() {
           </section>
 
           {/* 4 */}
-          <section className="mt-[18px]">
+          <section className="mt-[16px] md:mt-[18px]">
             <div className="doc-h2">4. Способы доставки</div>
 
             <p className="mt-[10px] doc-h3">
@@ -109,7 +123,7 @@ export default function DeliveryPage() {
           </section>
 
           {/* 5 */}
-          <section className="mt-[18px]">
+          <section className="mt-[16px] md:mt-[18px]">
             <div className="doc-h2">5. Сроки доставки</div>
 
             <p className="mt-[10px] doc-h3">
@@ -124,7 +138,7 @@ export default function DeliveryPage() {
           </section>
 
           {/* 6 */}
-          <section className="mt-[18px]">
+          <section className="mt-[16px] md:mt-[18px]">
             <div className="doc-h2">6. Стоимость доставки</div>
 
             <p className="mt-[10px] doc-h3">
@@ -139,7 +153,7 @@ export default function DeliveryPage() {
           </section>
 
           {/* 7 */}
-          <section className="mt-[18px]">
+          <section className="mt-[16px] md:mt-[18px]">
             <div className="doc-h2">7. Передача товара</div>
 
             <p className="mt-[10px] doc-h3">
@@ -160,7 +174,7 @@ export default function DeliveryPage() {
           </section>
 
           {/* 8 */}
-          <section className="mt-[18px]">
+          <section className="mt-[16px] md:mt-[18px]">
             <div className="doc-h2">8. Отказ от доставки</div>
 
             <p className="mt-[10px] doc-h3">
@@ -171,7 +185,7 @@ export default function DeliveryPage() {
           </section>
 
           {/* 9 */}
-          <section className="mt-[18px]">
+          <section className="mt-[16px] md:mt-[18px]">
             <div className="doc-h2">9. Возврат денежных средств</div>
 
             <p className="mt-[10px] doc-h3">
@@ -186,7 +200,7 @@ export default function DeliveryPage() {
           </section>
 
           {/* 10 */}
-          <section className="mt-[18px]">
+          <section className="mt-[16px] md:mt-[18px]">
             <div className="doc-h2">10. Заключительные положения</div>
 
             <p className="mt-[10px] doc-h3">
@@ -199,7 +213,6 @@ export default function DeliveryPage() {
               доступна на сайте https://satl.shop.
             </p>
           </section>
-
         </div>
       </main>
     </div>

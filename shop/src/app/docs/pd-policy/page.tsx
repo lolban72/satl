@@ -4,33 +4,46 @@ export default function PdPolicyPage() {
   return (
     <div className="bg-white text-black">
       <main
-        className={`${kanitBold.className} mx-auto max-w-[1440px] px-[65px] pt-[65px] pb-[120px] font-bold`}
+        className={[
+          kanitBold.className,
+          "mx-auto max-w-[1440px] font-bold",
+          // ✅ MOBILE (меньше отступы)
+          "px-[16px] pt-[24px] pb-[60px]",
+          // ✅ DESKTOP (как было)
+          "md:px-[65px] md:pt-[65px] md:pb-[120px]",
+        ].join(" ")}
       >
         {/* TITLE */}
-        <h1 className="doc-h1 uppercase">
-          Политика обработки персональных данных
-        </h1>
+        <h1 className="doc-h1 uppercase">Политика обработки персональных данных</h1>
 
         {/* BODY */}
-        <div className="mt-[26px] max-w-[920px] doc-text">
+        <div
+          className={[
+            // ✅ MOBILE
+            "mt-[14px] max-w-[720px]",
+            // ✅ DESKTOP (как было)
+            "md:mt-[26px] md:max-w-[920px]",
+            "doc-text",
+          ].join(" ")}
+        >
           {/* 1 */}
-          <section className="mt-[16px]">
+          <section className="mt-[12px] md:mt-[16px]">
             <div className="doc-h2">1. Общие положения</div>
 
-            <p className="mt-[10px] doc-h3">
+            <p className="mt-[8px] md:mt-[10px] doc-h3">
               1.1. Настоящая Политика обработки персональных данных (далее —
               Политика) разработана в соответствии с Федеральным законом от
               27.07.2006 № 152-ФЗ «О персональных данных» и иными нормативными
               правовыми актами Российской Федерации.
             </p>
 
-            <p className="mt-[8px] doc-h3">
+            <p className="mt-[6px] md:mt-[8px] doc-h3">
               1.2. Политика определяет порядок и условия обработки персональных
               данных, меры по их защите, а также права субъектов персональных
               данных при использовании сайта https://satl.shop.
             </p>
 
-            <p className="mt-[8px] doc-h3">
+            <p className="mt-[6px] md:mt-[8px] doc-h3">
               1.3. Оператором персональных данных является Индивидуальный
               предприниматель Тунян Левон Григорьевич
               <br />
@@ -41,7 +54,7 @@ export default function PdPolicyPage() {
               (далее — Оператор).
             </p>
 
-            <p className="mt-[8px] doc-h3">
+            <p className="mt-[6px] md:mt-[8px] doc-h3">
               1.4. Настоящая Политика размещается в свободном доступе на сайте
               https://satl.shop и действует в отношении всей информации, которую
               Оператор может получить о Пользователе при использовании сайта.
@@ -49,36 +62,34 @@ export default function PdPolicyPage() {
           </section>
 
           {/* 2 */}
-          <section className="mt-[18px]">
+          <section className="mt-[14px] md:mt-[18px]">
             <div className="doc-h2">2. Основные понятия</div>
 
-            <p className="mt-[10px] doc-h3">
+            <p className="mt-[8px] md:mt-[10px] doc-h3">
               Персональные данные — любая информация, относящаяся к прямо или
               косвенно определённому физическому лицу.
             </p>
 
-            <p className="mt-[8px] doc-h3">
+            <p className="mt-[6px] md:mt-[8px] doc-h3">
               Обработка персональных данных — любое действие с персональными
               данными, включая сбор, запись, систематизацию, хранение,
               использование, передачу, удаление и уничтожение.
             </p>
 
-            <p className="mt-[8px] doc-h3">
+            <p className="mt-[6px] md:mt-[8px] doc-h3">
               Пользователь — физическое лицо, использующее сайт https://satl.shop.
             </p>
           </section>
 
           {/* 3 */}
-          <section className="mt-[18px]">
-            <div className="doc-h2">
-              3. Персональные данные, которые обрабатываются
-            </div>
+          <section className="mt-[14px] md:mt-[18px]">
+            <div className="doc-h2">3. Персональные данные, которые обрабатываются</div>
 
-            <p className="mt-[10px] doc-h3">
+            <p className="mt-[8px] md:mt-[10px] doc-h3">
               Оператор обрабатывает следующие персональные данные Пользователей:
             </p>
 
-            <ul className="mt-[8px] list-disc pl-[18px] space-y-[6px] doc-h3">
+            <ul className="mt-[6px] md:mt-[8px] list-disc pl-[18px] space-y-[6px] doc-h3">
               <li>фамилия, имя, отчество;</li>
               <li>адрес электронной почты;</li>
               <li>номер телефона;</li>
@@ -90,17 +101,17 @@ export default function PdPolicyPage() {
               </li>
             </ul>
 
-            <p className="mt-[12px] doc-h3">
+            <p className="mt-[10px] md:mt-[12px] doc-h3">
               Оператор не обрабатывает специальные категории персональных
               данных и биометрические данные.
             </p>
           </section>
 
           {/* 4 */}
-          <section className="mt-[18px]">
+          <section className="mt-[14px] md:mt-[18px]">
             <div className="doc-h2">4. Цели обработки персональных данных</div>
 
-            <ul className="mt-[10px] list-disc pl-[18px] space-y-[6px] doc-h3">
+            <ul className="mt-[8px] md:mt-[10px] list-disc pl-[18px] space-y-[6px] doc-h3">
               <li>оформления и исполнения заказов;</li>
               <li>доставки товаров;</li>
               <li>связи с Пользователем;</li>
@@ -112,52 +123,46 @@ export default function PdPolicyPage() {
           </section>
 
           {/* 5 */}
-          <section className="mt-[18px]">
+          <section className="mt-[14px] md:mt-[18px]">
             <div className="doc-h2">5. Правовые основания обработки</div>
 
-            <ul className="mt-[10px] list-disc pl-[18px] space-y-[6px] doc-h3">
+            <ul className="mt-[8px] md:mt-[10px] list-disc pl-[18px] space-y-[6px] doc-h3">
               <li>согласия субъекта персональных данных;</li>
-              <li>
-                необходимости исполнения договора розничной купли-продажи;
-              </li>
+              <li>необходимости исполнения договора розничной купли-продажи;</li>
               <li>требований законодательства Российской Федерации.</li>
             </ul>
           </section>
 
           {/* 6 */}
-          <section className="mt-[18px]">
-            <div className="doc-h2">
-              6. Условия обработки и хранения персональных данных
-            </div>
+          <section className="mt-[14px] md:mt-[18px]">
+            <div className="doc-h2">6. Условия обработки и хранения персональных данных</div>
 
-            <p className="mt-[10px] doc-h3">
+            <p className="mt-[8px] md:mt-[10px] doc-h3">
               6.1. Обработка персональных данных осуществляется с использованием
               средств автоматизации и без их использования.
             </p>
 
-            <p className="mt-[8px] doc-h3">
+            <p className="mt-[6px] md:mt-[8px] doc-h3">
               6.2. Персональные данные хранятся на серверах, расположенных на
               территории Российской Федерации.
             </p>
 
-            <p className="mt-[8px] doc-h3">
+            <p className="mt-[6px] md:mt-[8px] doc-h3">
               6.3. Персональные данные хранятся не дольше, чем это необходимо
               для достижения целей обработки, либо в сроки, установленные
               законодательством.
             </p>
 
-            <p className="mt-[8px] doc-h3">
+            <p className="mt-[6px] md:mt-[8px] doc-h3">
               6.4. Трансграничная передача персональных данных не осуществляется.
             </p>
           </section>
 
           {/* 7 */}
-          <section className="mt-[18px]">
-            <div className="doc-h2">
-              7. Передача персональных данных третьим лицам
-            </div>
+          <section className="mt-[14px] md:mt-[18px]">
+            <div className="doc-h2">7. Передача персональных данных третьим лицам</div>
 
-            <p className="mt-[10px] doc-h3">
+            <p className="mt-[8px] md:mt-[10px] doc-h3">
               Оператор вправе передавать персональные данные третьим лицам
               исключительно в целях исполнения заказа (службы доставки,
               платёжные системы) и в случаях, предусмотренных законодательством РФ.
@@ -165,10 +170,10 @@ export default function PdPolicyPage() {
           </section>
 
           {/* 8 */}
-          <section className="mt-[18px]">
+          <section className="mt-[14px] md:mt-[18px]">
             <div className="doc-h2">8. Меры по защите персональных данных</div>
 
-            <p className="mt-[10px] doc-h3">
+            <p className="mt-[8px] md:mt-[10px] doc-h3">
               Оператор принимает необходимые правовые, организационные и
               технические меры для защиты персональных данных от неправомерного
               доступа, утраты, изменения или распространения.
@@ -176,10 +181,10 @@ export default function PdPolicyPage() {
           </section>
 
           {/* 9 */}
-          <section className="mt-[18px]">
+          <section className="mt-[14px] md:mt-[18px]">
             <div className="doc-h2">9. Права субъекта персональных данных</div>
 
-            <ul className="mt-[10px] list-disc pl-[18px] space-y-[6px] doc-h3">
+            <ul className="mt-[8px] md:mt-[10px] list-disc pl-[18px] space-y-[6px] doc-h3">
               <li>получать информацию об обработке своих персональных данных;</li>
               <li>требовать уточнения, блокирования или удаления персональных данных;</li>
               <li>отозвать согласие на обработку персональных данных;</li>
@@ -188,32 +193,32 @@ export default function PdPolicyPage() {
           </section>
 
           {/* 10 */}
-          <section className="mt-[18px]">
+          <section className="mt-[14px] md:mt-[18px]">
             <div className="doc-h2">10. Порядок обращения Пользователя</div>
 
-            <p className="mt-[10px] doc-h3">
+            <p className="mt-[8px] md:mt-[10px] doc-h3">
               Запросы, связанные с обработкой персональных данных,
               направляются по электронной почте:
             </p>
 
-            <p className="mt-[8px] doc-h3 font-semibold">
+            <p className="mt-[6px] md:mt-[8px] doc-h3 font-semibold">
               [ПРОПИСАТЬ ПОЧТУ]
             </p>
 
-            <p className="mt-[8px] doc-h3">
+            <p className="mt-[6px] md:mt-[8px] doc-h3">
               Срок рассмотрения запросов — не более 30 календарных дней.
             </p>
           </section>
 
           {/* 11 */}
-          <section className="mt-[18px]">
+          <section className="mt-[14px] md:mt-[18px]">
             <div className="doc-h2">11. Заключительные положения</div>
 
-            <p className="mt-[10px] doc-h3">
+            <p className="mt-[8px] md:mt-[10px] doc-h3">
               11.1. Оператор вправе вносить изменения в настоящую Политику.
             </p>
 
-            <p className="mt-[8px] doc-h3">
+            <p className="mt-[6px] md:mt-[8px] doc-h3">
               11.2. Актуальная редакция Политики всегда доступна на сайте
               https://satl.shop.
             </p>

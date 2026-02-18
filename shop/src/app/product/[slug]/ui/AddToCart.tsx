@@ -11,18 +11,23 @@ export default function AddToCart({
   image,
   variants,
   cartHref = "/cart",
+  sizeChartImage, // ✅ URL таблицы размеров
 }: any) {
   const addItem = useCart((s) => s.addItem);
-  const [size, setSize] = useState(variants[0]?.size);
 
-  // ✅ текущий вариант по выбранному размеру
+  const safeVariants = Array.isArray(variants) ? variants : [];
+  const [size, setSize] = useState(safeVariants?.[0]?.size);
+
   const currentVariant = useMemo(() => {
-    return variants.find((v: any) => v.size === size) ?? variants[0];
-  }, [variants, size]);
+    return safeVariants.find((v: any) => v.size === size) ?? safeVariants?.[0];
+  }, [safeVariants, size]);
 
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
   const closeTimer = useRef<number | null>(null);
+
+  // ✅ Модалка таблицы размеров
+  const [isSizeChartModalOpen, setIsSizeChartModalOpen] = useState(false);
 
   const imgSrc = useMemo(
     () => image ?? "https://picsum.photos/seed/product/240/240",
@@ -62,16 +67,43 @@ export default function AddToCart({
     };
   }, []);
 
+  function openSizeChartModal() {
+    setIsSizeChartModalOpen(true);
+  }
+
+  function closeSizeChartModal() {
+    setIsSizeChartModalOpen(false);
+  }
+
+  // ✅ ESC + блокировка скролла
+  useEffect(() => {
+    if (!isSizeChartModalOpen) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeSizeChartModal();
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isSizeChartModalOpen]);
+
   return (
     <div>
       {/* SIZES */}
-      <div className="flex gap-[8px]" style={{ fontFamily: "Yeast" }}>
-        {variants.map((v: any) => (
+      <div className="flex flex-wrap gap-[8px]" style={{ fontFamily: "Yeast" }}>
+        {safeVariants.map((v: any) => (
           <button
-            key={v.id}
+            key={v.id ?? `${v.size}-${v.color ?? "default"}`}
             onClick={() => setSize(v.size)}
             className={[
-              "flex items-center justify-center h-[36px] w-[36px] border text-[20px] font-bold",
+              "flex items-center justify-center border font-bold",
+              "h-[34px] w-[34px] text-[18px] md:h-[36px] md:w-[36px] md:text-[20px]",
               size === v.size ? "bg-black text-white" : "bg-white text-black",
             ].join(" ")}
             type="button"
@@ -81,17 +113,32 @@ export default function AddToCart({
         ))}
       </div>
 
-      <div className="mt-[5px] text-[10px] text-black/45">Таблица размеров</div>
+      {/* SIZE CHART LINK */}
+      <div className="mt-[6px] text-[10px] text-black/45">
+        <button
+          type="button"
+          onClick={openSizeChartModal}
+          className="underline text-black/70 hover:text-black transition"
+        >
+          Таблица размеров
+        </button>
+      </div>
 
       {/* BUTTON */}
       <button
-        className="mt-[16px] h-[50px] w-full bg-black text-white text-[20px] uppercase tracking-[-0.05em]"
+        className="
+          mt-[14px] md:mt-[16px]
+          w-full bg-black text-white uppercase
+          h-[46px] md:h-[50px]
+          text-[16px] md:text-[20px]
+          tracking-[-0.05em]
+        "
         style={{ fontFamily: "Brygada" }}
         onClick={() => {
           addItem({
             productId,
-            variantId: currentVariant?.id, // ✅ чтобы разные размеры не склеивались
-            size: currentVariant?.size,     // ✅ чтобы вывести на чекауте
+            variantId: currentVariant?.id,
+            size: currentVariant?.size,
             title,
             price,
             image,
@@ -104,22 +151,20 @@ export default function AddToCart({
         ДОБАВИТЬ В КОРЗИНУ
       </button>
 
-      {/* TOAST (правый нижний угол, без затемнения) */}
+      {/* TOAST */}
       {open ? (
         <div
-          className="fixed bottom-[26px] right-[26px] z-[9999]"
-          style={{
-            transform: closing ? "translateY(10px)" : "translateY(0)",
-            opacity: closing ? 0 : 1,
-            transition: "transform 220ms ease, opacity 220ms ease",
-          }}
+          className={[
+            "fixed z-[9999]",
+            "left-1/2 -translate-x-1/2 bottom-[18px]",
+            "md:left-auto md:translate-x-0 md:bottom-[26px] md:right-[26px]",
+            "transition-[opacity,transform] duration-200 ease-out",
+            closing ? "opacity-0 translate-y-[10px]" : "opacity-100 translate-y-0",
+          ].join(" ")}
         >
           <div
-            className="relative w-[520px] bg-white border border-black/60"
-            style={{
-              boxShadow: "0 20px 60px rgba(0,0,0,0.18)",
-              animation: "satl-in 220ms ease-out",
-            }}
+            className="relative bg-white border border-black/60 w-[calc(100vw-28px)] max-w-[520px] md:w-[520px]"
+            style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.18)" }}
             onMouseEnter={() => {
               if (closeTimer.current) window.clearTimeout(closeTimer.current);
             }}
@@ -127,20 +172,19 @@ export default function AddToCart({
               startAutoClose();
             }}
           >
-            {/* close */}
             <button
               type="button"
               onClick={closeToast}
-              className="absolute right-[16px] top-[14px] text-black/70 hover:text-black transition"
               aria-label="Закрыть"
+              className="absolute right-[12px] md:right-[16px] top-[12px] md:top-[14px] text-black/70 hover:text-black transition"
               style={{ fontSize: 22, lineHeight: 1 }}
             >
               ×
             </button>
 
-            <div className="flex items-center gap-[30px] px-[15px]">
-              {/* image */}
-              <div className="h-[150px] w-[150px] flex items-center justify-center mr-[20px] ml-[20px]">
+            <div className="flex items-center gap-[14px] md:gap-[30px] px-[12px] md:px-[15px] py-[10px]">
+              <div className="h-[92px] w-[92px] md:h-[150px] md:w-[150px] flex items-center justify-center md:mr-[20px] md:ml-[20px] shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={imgSrc}
                   alt={title}
@@ -149,17 +193,17 @@ export default function AddToCart({
                 />
               </div>
 
-              {/* text */}
-              <div className="">
+              <div className="min-w-0">
                 <div
-                  className="text-[14px] uppercase"
+                  className="text-[12px] md:text-[14px] uppercase truncate"
                   style={{ fontFamily: "Brygada", fontWeight: 700 }}
+                  title={String(title ?? "").toUpperCase()}
                 >
                   {String(title ?? "").toUpperCase()}
                 </div>
 
                 <div
-                  className="mt-[4px] text-[13px]"
+                  className="mt-[4px] text-[12px] md:text-[13px]"
                   style={{ fontFamily: "Brygada", fontWeight: 700 }}
                 >
                   УЖЕ В КОРЗИНЕ
@@ -167,7 +211,7 @@ export default function AddToCart({
 
                 <Link
                   href={cartHref}
-                  className="mt-[14px] inline-flex h-[42px] w-[260px] items-center justify-center bg-black text-white uppercase"
+                  className="mt-[10px] md:mt-[14px] inline-flex items-center justify-center bg-black text-white uppercase h-[40px] md:h-[42px] w-[220px] md:w-[260px]"
                   style={{ fontFamily: "Brygada", fontWeight: 700, fontSize: 14 }}
                   onClick={closeToast}
                 >
@@ -175,19 +219,47 @@ export default function AddToCart({
                 </Link>
               </div>
             </div>
+          </div>
+        </div>
+      ) : null}
 
-            <style jsx>{`
-              @keyframes satl-in {
-                from {
-                  transform: translateY(10px);
-                  opacity: 0;
-                }
-                to {
-                  transform: translateY(0);
-                  opacity: 1;
-                }
-              }
-            `}</style>
+      {/* ✅ SIZE CHART MODAL */}
+      {isSizeChartModalOpen ? (
+        <div
+          className="fixed inset-0 z-[10000] bg-black/60 flex items-center justify-center px-[14px]"
+          onClick={closeSizeChartModal}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="relative bg-white border border-black/20 w-full max-w-[780px] max-h-[85vh] overflow-auto"
+            onClick={(e) => e.stopPropagation()}
+            style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.22)" }}
+          >
+            <button
+              type="button"
+              onClick={closeSizeChartModal}
+              aria-label="Закрыть"
+              className="absolute right-[12px] top-[10px] text-black/70 hover:text-black transition"
+              style={{ fontSize: 26, lineHeight: 1 }}
+            >
+              ×
+            </button>
+
+            <div className="p-[14px] md:p-[18px] pt-[40px]">
+              {sizeChartImage ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={sizeChartImage}
+                  alt="Таблица размеров"
+                  className="w-full h-auto object-contain"
+                />
+              ) : (
+                <div className="text-[13px] text-black/60">
+                  Таблица размеров для этого товара не добавлена.
+                </div>
+              )}
+            </div>
           </div>
         </div>
       ) : null}
