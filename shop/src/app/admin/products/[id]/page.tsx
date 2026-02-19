@@ -56,7 +56,6 @@ export default async function AdminProductEditPage({
           })),
 
           // оставляю для совместимости, если где-то ещё используется
-          stock,
 
           categoryId: product.categoryId ?? null,
           isSoon: product.isSoon,
