@@ -1,72 +1,78 @@
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
-import { generateVerifyCode, tgSendMessage, verifyStartToken } from "@/lib/tg";
+import crypto from "crypto";
 
-function getChatId(update: any): string | null {
-  const chatId =
-    update?.message?.chat?.id ??
-    update?.callback_query?.message?.chat?.id ??
-    null;
-  return chatId !== null && chatId !== undefined ? String(chatId) : null;
+// Telegram присылает secret-token в заголовке, если ты его задал при setWebhook
+const TG_WEBHOOK_SECRET = process.env.TG_WEBHOOK_SECRET || "";
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
+
+function generateVerifyCode() {
+  // 100000..999999
+  return String(crypto.randomInt(100000, 1000000));
 }
 
-function getText(update: any): string {
-  return String(update?.message?.text ?? "");
+function sha256(s: string) {
+  return crypto.createHash("sha256").update(s).digest("hex");
+}
+
+async function tgSendMessage(chatId: string, text: string) {
+  if (!BOT_TOKEN) return;
+
+  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      parse_mode: "HTML",
+      disable_web_page_preview: true,
+    }),
+  }).catch(() => {});
+}
+
+/**
+ * Ожидаем /start <payload>, где payload = userId
+ * Например: /start ckx... (cuid)
+ */
+function extractStartPayload(text: string) {
+  const t = (text || "").trim();
+  if (!t.toLowerCase().startsWith("/start")) return null;
+
+  // "/start" or "/start payload"
+  const parts = t.split(/\s+/);
+  if (parts.length < 2) return null;
+
+  return parts.slice(1).join(" ").trim();
 }
 
 export async function POST(req: Request) {
-  // ✅ проверяем секрет вебхука
-  const expected = process.env.TG_WEBHOOK_SECRET;
-  const got = req.headers.get("x-telegram-bot-api-secret-token") || "";
-
-  if (!expected) {
-    return Response.json({ ok: false, error: "TG_WEBHOOK_SECRET not set" }, { status: 500 });
-  }
-  if (got !== expected) {
-    return Response.json({ ok: false, error: "Bad secret token" }, { status: 401 });
-  }
-
-  const update = await req.json().catch(() => null);
-  if (!update) return Response.json({ ok: true });
-
-  const chatId = getChatId(update);
-  const text = getText(update).trim();
-
-  // мы обязаны быстро отвечать 200, но тут логика лёгкая — ок
   try {
+    // ✅ проверка secret token (если используешь)
+    if (TG_WEBHOOK_SECRET) {
+      const header = req.headers.get("x-telegram-bot-api-secret-token") || "";
+      if (header !== TG_WEBHOOK_SECRET) {
+        // Telegram будет ретраить, если не 200, поэтому отвечаем 200, но игнорируем
+        return Response.json({ ok: true });
+      }
+    }
+
+    if (!BOT_TOKEN) {
+      // чтобы Telegram не ретраил
+      return Response.json({ ok: true, error: "No TELEGRAM_BOT_TOKEN" });
+    }
+
+    const update: any = await req.json().catch(() => null);
+    const msg = update?.message || update?.edited_message;
+    const chatId = msg?.chat?.id ? String(msg.chat.id) : null;
+    const text = msg?.text ? String(msg.text) : "";
+
     if (!chatId) return Response.json({ ok: true });
 
-    // /start <payload>
-    if (text.startsWith("/start")) {
-      const parts = text.split(" ");
-      const token = parts[1] ? String(parts[1]).trim() : "";
+    // ✅ /start payload
+    const payload = extractStartPayload(text);
 
-      if (!token) {
-        await tgSendMessage(
-          chatId,
-          "Откройте бота через ссылку с сайта, чтобы привязать аккаунт."
-        );
-        return Response.json({ ok: true });
-      }
-
-      const verified = verifyStartToken(token);
-      if (!verified) {
-        await tgSendMessage(chatId, "Ссылка устарела или неверная. Откройте подтверждение на сайте ещё раз.");
-        return Response.json({ ok: true });
-      }
-
-      const { userId } = verified;
-
-      // ✅ проверим, что chatId не занят другим пользователем
-      const already = await prisma.user.findFirst({
-        where: { tgChatId: chatId },
-        select: { id: true, email: true },
-      });
-
-      if (already && already.id !== userId) {
-        await tgSendMessage(chatId, "Этот Telegram уже привязан к другому аккаунту.");
-        return Response.json({ ok: true });
-      }
+    if (payload) {
+      // В payload ожидаем userId (cuid). Если у тебя другой формат — скажи, подправлю.
+      const userId = payload;
 
       // ✅ проверим, что пользователь существует
       const user = await prisma.user.findUnique({
@@ -79,18 +85,22 @@ export async function POST(req: Request) {
         return Response.json({ ok: true });
       }
 
-      // ✅ генерим код, хешируем, пишем в юзера
+      // ✅ генерим код, хэшируем, пишем в TgVerification
       const code = generateVerifyCode();
-      const hash = await bcrypt.hash(code, 10);
-      const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 минут
+      const codeHash = sha256(code);
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 минут
 
+      // 1) сохраняем chatId у пользователя
       await prisma.user.update({
         where: { id: userId },
-        data: {
-          tgChatId: chatId,
-          tgVerifyCodeHash: hash,
-          tgVerifyExpiresAt: expires,
-        },
+        data: { tgChatId: chatId },
+      });
+
+      // 2) сохраняем код в TgVerification (как в schema.prisma)
+      await prisma.tgVerification.upsert({
+        where: { codeHash },
+        update: { chatId, expiresAt },
+        create: { chatId, codeHash, expiresAt },
       });
 
       await tgSendMessage(
@@ -106,6 +116,7 @@ export async function POST(req: Request) {
       chatId,
       "Чтобы подтвердить аккаунт, откройте страницу подтверждения на сайте и перейдите в бота по ссылке."
     );
+
     return Response.json({ ok: true });
   } catch (e: any) {
     // Telegram будет ретраить, если не 200, поэтому всегда 200
