@@ -121,7 +121,7 @@ export async function POST(req: Request) {
           images: imagesFinal,
           isSoon,
           discountPercent: isSoon ? 0 : body.discountPercent ?? 0,
-          category: body.categoryId ? { connect: { id: body.categoryId } } : null,
+          category: body.categoryId ? { connect: { id: body.categoryId } } : undefined,
 
           // ✅ размерная таблица
           sizeChartImage: body.sizeChartImage ?? null,
