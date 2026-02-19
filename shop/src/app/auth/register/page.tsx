@@ -36,9 +36,10 @@ export default function RegisterPage() {
   const router = useRouter();
 
   const [name, setName] = useState("");
-  const [lastName, setLastName] = useState(""); // пока просто UI (в БД/API у тебя этого нет)
-  const [country, setCountry] = useState("Российская Федерация");
-  const [phone, setPhone] = useState(""); // пока просто UI (в API можно добавить позже)
+  const [lastName, setLastName] = useState(""); // UI only
+  const [country, setCountry] = useState("Российская Федерация"); // UI only
+  const [phone, setPhone] = useState(""); // UI only
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
@@ -56,7 +57,7 @@ export default function RegisterPage() {
     const eMail = email.trim().toLowerCase();
     const n = name.trim();
 
-    if (n.length < 2) return setErr("Имя слишком короткое");
+    // ✅ name теперь НЕ обязателен (можно пустым)
     if (!eMail) return setErr("Введите e-mail");
     if (password.length < 6) return setErr("Пароль минимум 6 символов");
     if (password !== password2) return setErr("Пароли не совпадают");
@@ -68,12 +69,11 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // ВАЖНО: твой текущий Schema принимает только email, password, name (опц.)
         body: JSON.stringify({
           email: eMail,
           password,
-          name: n,
-          // lastName/phone/country пока не отправляем, т.к. в Schema их нет
+          // ✅ отправляем name только если он не пустой (иначе вообще не шлём)
+          ...(n ? { name: n } : {}),
         }),
       });
 
@@ -81,6 +81,14 @@ export default function RegisterPage() {
       if (!res.ok) {
         setErr(data?.error || "Ошибка регистрации");
         return;
+      }
+
+      // ✅ если сервер вернул код (devCode) — сохраняем, чтобы показать на verify странице (для теста)
+      // (потом можно убрать, когда будет TG-бот)
+      if (data?.devCode) {
+        try {
+          localStorage.setItem("satl_verify_dev_code", String(data.devCode));
+        } catch {}
       }
 
       // 2) сразу логиним
@@ -96,7 +104,8 @@ export default function RegisterPage() {
         return;
       }
 
-      router.push("/account/profile");
+      // ✅ после успешного логина — на страницу подтверждения
+      router.push("/auth/verify");
       router.refresh();
     } catch (e: any) {
       setErr(e?.message || "Ошибка");
@@ -127,8 +136,11 @@ export default function RegisterPage() {
           <form onSubmit={onSubmit} className="mt-[18px]">
             <div className="grid gap-[12px]">
               <label className="block">
-                <Label>Имя</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} hasError={!!err && name.trim().length < 2} />
+                <Label>Имя (необязательно)</Label>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
               </label>
 
               <label className="block">
@@ -148,17 +160,32 @@ export default function RegisterPage() {
 
               <label className="block">
                 <Label>E-mail</Label>
-                <Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" hasError={!!err && !email.trim()} />
+                <Input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  type="email"
+                  hasError={!!err && !email.trim()}
+                />
               </label>
 
               <label className="block">
                 <Label>Пароль</Label>
-                <Input value={password} onChange={(e) => setPassword(e.target.value)} type="password" hasError={!!err && password.length < 6} />
+                <Input
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  type="password"
+                  hasError={!!err && password.length < 6}
+                />
               </label>
 
               <label className="block">
                 <Label>Подтвердите пароль</Label>
-                <Input value={password2} onChange={(e) => setPassword2(e.target.value)} type="password" hasError={!!err && password2 !== password} />
+                <Input
+                  value={password2}
+                  onChange={(e) => setPassword2(e.target.value)}
+                  type="password"
+                  hasError={!!err && password2 !== password}
+                />
               </label>
             </div>
 
@@ -202,7 +229,6 @@ export default function RegisterPage() {
                 </Link>
               </span>
             </label>
-
           </form>
 
           <div className="mt-[14px]">

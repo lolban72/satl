@@ -26,11 +26,34 @@ model User {
   addressPostcode  String?
   addressComment   String?
 
+  // ✅ общий флаг подтверждения аккаунта (после TG-кода)
+  isVerified Boolean @default(false)
+
+  // ✅ Telegram (привязка)
+  tgChatId     String?   @unique
+  tgVerifiedAt DateTime?
+
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   orders    Order[]
-
   newsletterEnabled Boolean @default(false)
+}
 
+/**
+ * ✅ Вариант A: временная таблица для связки "код ↔ chatId"
+ * Бот создаёт запись при /start, сайт подтверждает код и переносит chatId в User.
+ */
+model TgVerification {
+  id        String   @id @default(cuid())
+
+  chatId    String
+  codeHash  String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([chatId])
+  @@index([expiresAt])
 }
 
 model Category {
@@ -51,37 +74,35 @@ model Category {
 }
 
 model HeroBanner {
-  id          String   @id @default(cuid())
-  enabled     Boolean  @default(true)
+  id           String   @id @default(cuid())
+  enabled      Boolean  @default(true)
 
-  title       String
-  subtitle    String?
-  buttonText  String?
-  buttonHref  String?
+  title        String
+  subtitle     String?
+  buttonText   String?
+  buttonHref   String?
 
   imageDesktop String?
   imageMobile  String?
 
-  overlay     Int      @default(25)
-  createdAt   DateTime @default(now())
+  overlay      Int      @default(25)
+  createdAt    DateTime @default(now())
 }
 
-
-
 model Product {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  title       String
-  description String?
-  price       Int
-  images      String[]
-  createdAt   DateTime @default(now())
-  isSoon      Boolean  @default(false)
-  variants    Variant[]
-  discountPercent Int @default(0)
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  title           String
+  description     String?
+  price           Int
+  images          String[]
+  createdAt       DateTime @default(now())
+  isSoon          Boolean  @default(false)
+  variants        Variant[]
+  discountPercent Int      @default(0)
   sizeChartImage  String?
-  categoryId  String?
-  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId      String?
+  category        Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 }
 
 model Variant {
@@ -103,7 +124,6 @@ model MarqueeSettings {
   updatedAt    DateTime @updatedAt
   createdAt    DateTime @default(now())
 }
-
 
 model Order {
   id        String      @id @default(cuid())
