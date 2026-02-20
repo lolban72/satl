@@ -26,10 +26,12 @@ export async function POST(req: Request) {
     });
 
     if (!ver) {
+      console.log("[verify] Invalid code");
       return Response.json({ error: "Неверный код" }, { status: 400 });
     }
 
     if (ver.expiresAt.getTime() < Date.now()) {
+      console.log("[verify] Code expired");
       // просроченный код — чистим
       await prisma.tgVerification.delete({ where: { id: ver.id } }).catch(() => {});
       return Response.json({ error: "Код просрочен" }, { status: 400 });
@@ -42,10 +44,12 @@ export async function POST(req: Request) {
     });
 
     if (!user) {
+      console.log("[verify] User not found");
       return Response.json({ error: "Пользователь не найден" }, { status: 404 });
     }
 
     if (user.isVerified) {
+      console.log("[verify] User already verified");
       // уже подтверждён — можно просто удалить код
       await prisma.tgVerification.delete({ where: { id: ver.id } }).catch(() => {});
       return Response.json({ ok: true, alreadyVerified: true });
@@ -63,9 +67,12 @@ export async function POST(req: Request) {
     // 4) удаляем использованный код
     await prisma.tgVerification.delete({ where: { id: ver.id } });
 
+    console.log("[verify] User successfully verified");
+
     return Response.json({ ok: true });
   } catch (e: any) {
     const msg = e?.issues?.[0]?.message || e?.message || "Ошибка подтверждения";
+    console.log("[verify] Error:", msg);
     return Response.json({ error: msg }, { status: 400 });
   }
 }

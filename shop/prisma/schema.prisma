@@ -26,6 +26,8 @@ model User {
   addressPostcode  String?
   addressComment   String?
 
+  role      String   @default("user")
+
   // ✅ общий флаг подтверждения аккаунта (после TG-кода)
   isVerified Boolean @default(false)
 

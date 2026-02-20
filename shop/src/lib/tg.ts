@@ -61,7 +61,7 @@ export function verifyStartToken(token: string): { userId: string; iat: number }
 export function makeBotStartLink(token: string) {
   const username = process.env.TELEGRAM_BOT_USERNAME;
   if (!username) throw new Error("TELEGRAM_BOT_USERNAME is not set");
-  return `https://t.me/${username}?start=${encodeURIComponent(token)}`;
+  return `tg://resolve?domain=${username}&start=${encodeURIComponent(token)}`;
 }
 
 export async function tgSendMessage(chatId: string, text: string) {
