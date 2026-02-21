@@ -101,13 +101,11 @@ export default function Footer() {
 
             <div className="mt-[10px] flex gap-x-[48px]">
               <div className="flex flex-col gap-y-[6px] text-[9px] leading-[1.2] uppercase tracking-[0.02em] text-black/80">
-                <a href="#" className="hover:text-black transition">телеграм</a>
-                <a href="#" className="hover:text-black transition">почта</a>
-                <a href="#" className="hover:text-black transition">вк</a>
-              </div>
-
-              <div className="flex flex-col gap-y-[6px] text-[9px] leading-[1.2] uppercase tracking-[0.02em] text-black/80">
+                <a href="https://web.telegram.org/k/#@MANAGER_SATL_SHOP" className="hover:text-black transition">телеграм</a>
+                <a href="mailto:Satl.Shop.ru@gmail.com" className="hover:text-black transition">почта</a>
                 <a href="#" className="hover:text-black transition">тикток</a>
+              </div>
+              <div className="flex flex-col gap-y-[6px] text-[9px] leading-[1.2] uppercase tracking-[0.02em] text-black/80">
               </div>
             </div>
           </div>

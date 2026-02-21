@@ -4,6 +4,42 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/lib/cart-store";
 import Link from "next/link";
 
+// порядок “классических” размеров (если попадутся другие — уйдут в конец и отсортируются по алфавиту)
+const SIZE_ORDER = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+
+function normalizeSize(s: any) {
+  return String(s ?? "").trim().toUpperCase();
+}
+
+function sortVariantsBySize(variants: any[]) {
+  return [...variants].sort((a, b) => {
+    const as = normalizeSize(a?.size);
+    const bs = normalizeSize(b?.size);
+
+    const ai = SIZE_ORDER.indexOf(as);
+    const bi = SIZE_ORDER.indexOf(bs);
+
+    // оба в списке — сортируем по порядку
+    if (ai !== -1 && bi !== -1) return ai - bi;
+
+    // только один в списке — он выше
+    if (ai !== -1) return -1;
+    if (bi !== -1) return 1;
+
+    // если оба не в списке — попробуем числовую сортировку (42, 44, 46...)
+    const an = Number(as);
+    const bn = Number(bs);
+    const aNum = Number.isFinite(an);
+    const bNum = Number.isFinite(bn);
+    if (aNum && bNum) return an - bn;
+    if (aNum) return -1;
+    if (bNum) return 1;
+
+    // иначе — по алфавиту
+    return as.localeCompare(bs);
+  });
+}
+
 export default function AddToCart({
   productId,
   title,
@@ -15,8 +51,32 @@ export default function AddToCart({
 }: any) {
   const addItem = useCart((s) => s.addItem);
 
-  const safeVariants = Array.isArray(variants) ? variants : [];
-  const [size, setSize] = useState(safeVariants?.[0]?.size);
+  // ✅ только реальные размеры товара, но отсортированные стабильно
+  const safeVariants = useMemo(() => {
+    const arr = Array.isArray(variants) ? variants : [];
+    return sortVariantsBySize(arr);
+  }, [variants]);
+
+  // ✅ выбираем первый доступный размер (чтобы не было undefined и не выбирался “нет в наличии”)
+  const firstAvailableSize = useMemo(() => {
+    const hit = safeVariants.find((v: any) => (v?.stock ?? 0) > 0);
+    return hit?.size;
+  }, [safeVariants]);
+
+  const [size, setSize] = useState(firstAvailableSize);
+
+  // ✅ если variants загрузились позже / выбранный стал недоступен — синхронизируем
+  useEffect(() => {
+    if (!size && firstAvailableSize) setSize(firstAvailableSize);
+
+    const current = safeVariants.find((v: any) => v?.size === size);
+    const ok = current && (current.stock ?? 0) > 0;
+
+    if (!ok && firstAvailableSize && size !== firstAvailableSize) {
+      setSize(firstAvailableSize);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firstAvailableSize, safeVariants]);
 
   const currentVariant = useMemo(() => {
     return safeVariants.find((v: any) => v.size === size) ?? safeVariants?.[0];
@@ -95,22 +155,33 @@ export default function AddToCart({
 
   return (
     <div>
-      {/* SIZES */}
+      {/* SIZES (только реальные размеры, но стабильный порядок) */}
       <div className="flex flex-wrap gap-[8px]" style={{ fontFamily: "Yeast" }}>
-        {safeVariants.map((v: any) => (
-          <button
-            key={v.id ?? `${v.size}-${v.color ?? "default"}`}
-            onClick={() => setSize(v.size)}
-            className={[
-              "flex items-center justify-center border font-bold",
-              "h-[34px] w-[34px] text-[18px] md:h-[36px] md:w-[36px] md:text-[20px]",
-              size === v.size ? "bg-black text-white" : "bg-white text-black",
-            ].join(" ")}
-            type="button"
-          >
-            <div className="mt-[2px]">{v.size}</div>
-          </button>
-        ))}
+        {safeVariants.map((v: any) => {
+          const isAvailable = (v?.stock ?? 0) > 0;
+
+          return (
+            <button
+              key={v.id ?? `${v.size}-${v.color ?? "default"}`}
+              onClick={() => {
+                if (isAvailable) setSize(v.size);
+              }}
+              disabled={!isAvailable}
+              className={[
+                "flex items-center justify-center border font-bold",
+                "h-[34px] w-[34px] text-[18px] md:h-[36px] md:w-[36px] md:text-[20px]",
+                size === v.size ? "bg-black text-white" : "bg-white text-black",
+                !isAvailable
+                  ? "opacity-30 cursor-not-allowed"
+                  : "hover:bg-black hover:text-white transition",
+              ].join(" ")}
+              type="button"
+              title={!isAvailable ? "Нет в наличии" : ""}
+            >
+              <div className="mt-[2px]">{v.size}</div>
+            </button>
+          );
+        })}
       </div>
 
       {/* SIZE CHART LINK */}
@@ -147,6 +218,7 @@ export default function AddToCart({
           openToast();
         }}
         type="button"
+        disabled={!currentVariant || (currentVariant.stock ?? 0) <= 0}
       >
         ДОБАВИТЬ В КОРЗИНУ
       </button>
@@ -159,7 +231,9 @@ export default function AddToCart({
             "left-1/2 -translate-x-1/2 bottom-[18px]",
             "md:left-auto md:translate-x-0 md:bottom-[26px] md:right-[26px]",
             "transition-[opacity,transform] duration-200 ease-out",
-            closing ? "opacity-0 translate-y-[10px]" : "opacity-100 translate-y-0",
+            closing
+              ? "opacity-0 translate-y-[10px]"
+              : "opacity-100 translate-y-0",
           ].join(" ")}
         >
           <div
@@ -212,7 +286,11 @@ export default function AddToCart({
                 <Link
                   href={cartHref}
                   className="mt-[10px] md:mt-[14px] inline-flex items-center justify-center bg-black text-white uppercase h-[40px] md:h-[42px] w-[220px] md:w-[260px]"
-                  style={{ fontFamily: "Brygada", fontWeight: 700, fontSize: 14 }}
+                  style={{
+                    fontFamily: "Brygada",
+                    fontWeight: 700,
+                    fontSize: 14,
+                  }}
                   onClick={closeToast}
                 >
                   ОФОРМИТЬ ЗАКАЗ

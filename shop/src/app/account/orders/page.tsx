@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import AccountShell from "../ui/AccountShell";
+import OrderStatusBadge from "@/components/OrderStatusBadge";
 
 export default async function OrdersPage() {
   const session = await auth();
@@ -23,16 +25,18 @@ export default async function OrdersPage() {
       ) : (
         <div className="space-y-[14px]">
           {orders.map((o) => (
-            <div key={o.id} className="border border-black/15 p-[16px]">
+            <Link
+              key={o.id}
+              href={`/account/orders/${o.id}`}
+              className="block border border-black/15 p-[16px] hover:border-black transition"
+            >
               <div className="text-[11px] uppercase tracking-[0.02em] text-black/45">
                 {new Date(o.createdAt).toLocaleString("ru-RU")}
               </div>
 
               <div className="mt-[8px] flex items-center justify-between">
-                <div className="text-[13px]">
-                  Статус:{" "}
-                  <span className="font-semibold text-black">{o.status}</span>
-                </div>
+                <OrderStatusBadge status={o.status as any} />
+
                 <div className="text-[16px] font-semibold">
                   {(o.total / 100).toFixed(0)}р
                 </div>
@@ -41,7 +45,7 @@ export default async function OrdersPage() {
               <div className="mt-[8px] text-[10px] text-black/40 break-all">
                 ID: {o.id}
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

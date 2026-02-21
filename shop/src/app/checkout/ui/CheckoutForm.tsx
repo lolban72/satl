@@ -24,8 +24,15 @@ export default function CheckoutForm(props: {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
+  // ✅ если адрес в ЛК не заполнен — запрещаем оформление и просим заполнить
+  const isProfileAddressEmpty = !props.initial.address?.trim();
+
   async function submit() {
     setErr(null);
+
+    if (isProfileAddressEmpty) {
+      return setErr("Заполните адрес доставки в личном кабинете.");
+    }
 
     if (items.length === 0) return setErr("Корзина пуста.");
     if (!name.trim()) return setErr("Укажите имя.");
@@ -89,82 +96,115 @@ export default function CheckoutForm(props: {
       <div className="mt-[36px] grid gap-[28px] lg:grid-cols-[1fr_420px] lg:items-start">
         {/* LEFT: FORM */}
         <div className="border border-black/10 p-[18px] md:p-[22px]">
-          <div className="text-[18px] font-semibold tracking-[-0.01em]">Данные получателя</div>
-          <div className="mt-[6px] text-[12px] text-black/55">
-            Мы используем эти данные для доставки.
+          <div className="text-[18px] font-semibold tracking-[-0.01em]">
+            Данные получателя
           </div>
 
-          <div className="mt-[18px] grid gap-[16px]">
-            {/* NAME */}
-            <label className="grid gap-[4px]">
-              <span className="text-[9px] uppercase tracking-[0.12em] text-black/55">
-                Имя
-              </span>
-              <input
-                className="h-[46px] border border-black/15 px-[14px] text-[14px] outline-none
-                           focus:border-black transition bg-white"
-                value={name}
-                style={{ fontFamily: "Brygada" }}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Ваше имя"
-              />
-            </label>
-
-            {/* PHONE */}
-            <label className="grid gap-[4px]">
-              <span className="text-[9px] uppercase tracking-[0.12em] text-black/55">
-                Телефон
-              </span>
-              <input
-                className="h-[46px] border border-black/15 px-[14px] text-[14px] outline-none
-                           focus:border-black transition bg-white"
-                value={phone}
-                style={{ fontFamily: "Brygada" }}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+7 (___) ___-__-__"
-              />
-            </label>
-
-            {/* ADDRESS */}
-            <label className="grid gap-[4px]">
-              <span className="text-[9px] uppercase tracking-[0.12em] text-black/55">
-                Адрес
-              </span>
-              <input
-                className="h-[46px] border border-black/15 px-[14px] text-[14px] outline-none
-                           focus:border-black transition bg-white"
-                value={address}
-                style={{ fontFamily: "Brygada" }}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Город, улица, дом, квартира"
-              />
-            </label>
-
-            <div>
-            {/* CTA */}
-              <button
-                className="mt-[6px] flex h-[46px] w-full items-center justify-center bg-black text-white
-                          text-[10px] font-bold uppercase tracking-[0.12em] hover:bg-black/85 transition
-                          disabled:opacity-50 disabled:hover:bg-black"
-                disabled={loading || items.length === 0}
-                onClick={submit}
-                type="button"
-              >
-                {loading ? "Оформляем..." : "Оформить заказ"}
-              </button>
-
-              <div className="text-[11px] italic leading-[1.25] text-black/45 mt-[6px]">
-                Нажимая кнопку, вы подтверждаете оформление заказа.
+          {isProfileAddressEmpty ? (
+            <>
+              <div className="mt-[12px] text-[12px] text-black/55 leading-[1.5]">
+                Для оформления заказа необходимо заполнить адрес доставки в личном кабинете.
               </div>
-            </div>
-          </div>
+
+              <div className="mt-[18px] border border-black/20 p-[16px]">
+                <div className="text-[10px] uppercase tracking-[0.12em] text-black/55 mb-[6px]">
+                  Внимание
+                </div>
+
+                <div className="text-[12px] text-black/75">
+                  Перейдите в раздел «Мои данные» и заполните поле адреса.
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => router.push("/account/address")}
+                  className="mt-[14px] h-[42px] w-full bg-black text-white
+                             text-[10px] font-bold uppercase tracking-[0.12em]
+                             hover:bg-black/85 transition"
+                >
+                  Перейти в личный кабинет
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mt-[6px] text-[12px] text-black/55">
+                Мы используем эти данные для доставки.
+              </div>
+
+              <div className="mt-[18px] grid gap-[16px]">
+                {/* NAME */}
+                <label className="grid gap-[4px]">
+                  <span className="text-[9px] uppercase tracking-[0.12em] text-black/55">
+                    Имя
+                  </span>
+                  <input
+                    className="h-[46px] border border-black/15 px-[14px] text-[14px] outline-none
+                               focus:border-black transition bg-white"
+                    value={name}
+                    style={{ fontFamily: "Brygada" }}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Ваше имя"
+                  />
+                </label>
+
+                {/* PHONE */}
+                <label className="grid gap-[4px]">
+                  <span className="text-[9px] uppercase tracking-[0.12em] text-black/55">
+                    Телефон
+                  </span>
+                  <input
+                    className="h-[46px] border border-black/15 px-[14px] text-[14px] outline-none
+                               focus:border-black transition bg-white"
+                    value={phone}
+                    style={{ fontFamily: "Brygada" }}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+7 (___) ___-__-__"
+                  />
+                </label>
+
+                {/* ADDRESS */}
+                <label className="grid gap-[4px]">
+                  <span className="text-[9px] uppercase tracking-[0.12em] text-black/55">
+                    Адрес
+                  </span>
+                  <input
+                    className="h-[46px] border border-black/15 px-[14px] text-[14px] outline-none
+                               focus:border-black transition bg-white"
+                    value={address}
+                    style={{ fontFamily: "Brygada" }}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Город, улица, дом, квартира"
+                  />
+                </label>
+
+                {/* CTA */}
+                <button
+                  className="mt-[6px] flex h-[46px] w-full items-center justify-center bg-black text-white
+                            text-[10px] font-bold uppercase tracking-[0.12em] hover:bg-black/85 transition
+                            disabled:opacity-50 disabled:hover:bg-black"
+                  disabled={loading || items.length === 0}
+                  onClick={submit}
+                  type="button"
+                >
+                  {loading ? "Оформляем..." : "Оформить заказ"}
+                </button>
+
+                <div className="text-[11px] italic leading-[1.25] text-black/45 mt-[6px]">
+                  Нажимая кнопку, вы подтверждаете оформление заказа.
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* RIGHT: SUMMARY */}
         <aside className="border border-black/10 p-[18px] lg:sticky lg:top-[110px] bg-white">
           <div className="flex items-end justify-between">
             <div className="text-[20px] font-semibold">Ваш заказ</div>
-            <div style={{ fontFamily: "Brygada" }} className="text-[12px] text-black/55">{itemsCount} шт.</div>
+            <div style={{ fontFamily: "Brygada" }} className="text-[12px] text-black/55">
+              {itemsCount} шт.
+            </div>
           </div>
 
           {/* items */}
@@ -180,17 +220,22 @@ export default function CheckoutForm(props: {
                   <img
                     src={i.image ?? "https://picsum.photos/seed/cart/140/140"}
                     alt={i.title}
-                    
                     className="h-[70px] w-[70px] object-cover border border-black/10"
                     draggable={false}
                   />
 
                   <div className="min-w-0 flex-1">
-                    <div style={{ fontFamily: "Brygada" }} className="truncate text-[12px] font-semibold uppercase tracking-[0.06em]">
+                    <div
+                      style={{ fontFamily: "Brygada" }}
+                      className="truncate text-[12px] font-semibold uppercase tracking-[0.06em]"
+                    >
                       {String(i.title ?? "")}
                     </div>
 
-                    <div style={{ fontFamily: "Brygada" }} className="mt-[6px] flex flex-wrap items-center gap-[10px] text-[11px] text-black/60">
+                    <div
+                      style={{ fontFamily: "Brygada" }}
+                      className="mt-[6px] flex flex-wrap items-center gap-[10px] text-[11px] text-black/60"
+                    >
                       <span>{moneyRub(i.price)}</span>
                       <span aria-hidden="true">•</span>
                       <span>Кол-во: {i.qty}</span>
@@ -199,7 +244,10 @@ export default function CheckoutForm(props: {
                     </div>
                   </div>
 
-                  <div style={{ fontFamily: "Brygada" }} className="text-[12px] font-semibold whitespace-nowrap">
+                  <div
+                    style={{ fontFamily: "Brygada" }}
+                    className="text-[12px] font-semibold whitespace-nowrap"
+                  >
                     {moneyRub(i.price * i.qty)}
                   </div>
                 </div>
@@ -213,23 +261,30 @@ export default function CheckoutForm(props: {
           <div className="space-y-[10px] text-[12px] text-black/65">
             <div className="flex items-center justify-between">
               <span>Товары</span>
-              <span style={{ fontFamily: "Brygada" }} className="text-black">{moneyRub(total)}</span>
+              <span style={{ fontFamily: "Brygada" }} className="text-black">
+                {moneyRub(total)}
+              </span>
             </div>
 
             <div className="flex items-center justify-between">
               <span>Доставка</span>
-              <span style={{ fontFamily: "Brygada" }} className="text-black/45">Рассчитается позже</span>
+              <span style={{ fontFamily: "Brygada" }} className="text-black/45">
+                Рассчитается позже
+              </span>
             </div>
 
             <div className="h-[1px] bg-black/10 my-[12px]" />
 
             <div className="flex items-center justify-between">
               <span className="text-black/70">К оплате</span>
-              <span style={{ fontFamily: "Brygada" }} className="text-[16px] font-semibold text-black">{moneyRub(total)}</span>
+              <span
+                style={{ fontFamily: "Brygada" }}
+                className="text-[16px] font-semibold text-black"
+              >
+                {moneyRub(total)}
+              </span>
             </div>
           </div>
-
-          {/* small back */}
         </aside>
       </div>
     </div>

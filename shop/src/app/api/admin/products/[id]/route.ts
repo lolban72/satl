@@ -3,6 +3,20 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 
+function parseAdminEmails(v?: string) {
+  return (v ?? "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function isAdminEmail(email?: string | null) {
+  const e = (email ?? "").trim().toLowerCase();
+  if (!e) return false;
+  const admins = parseAdminEmails(process.env.ADMIN_EMAILS);
+  return admins.includes(e);
+}
+
 function makeSku(slug: string, size: string, color: string) {
   return `${slug}-${size}-${color}-${Date.now()}-${Math.random()
     .toString(16)
@@ -13,9 +27,11 @@ export async function PATCH(
   req: Request,
   ctx: { params: Promise<{ id: string }> }
 ) {
+  // ✅ защита админского API
   const session = await auth();
-  if (!session?.user)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user || !isAdminEmail(session.user.email)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { id } = await ctx.params;
   const body = await req.json();

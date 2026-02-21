@@ -3,6 +3,20 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache"; // ✅ ДОБАВЬ
 
+function parseAdminEmails(v?: string) {
+  return (v ?? "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function isAdminEmail(email?: string | null) {
+  const e = (email ?? "").trim().toLowerCase();
+  if (!e) return false;
+  const admins = parseAdminEmails(process.env.ADMIN_EMAILS);
+  return admins.includes(e);
+}
+
 async function getOrCreate() {
   let row = await prisma.marqueeSettings.findFirst();
   if (!row) {
@@ -14,14 +28,21 @@ async function getOrCreate() {
 }
 
 export async function GET() {
+  // ✅ защита админского API
+  const session = await auth();
+  if (!session?.user || !isAdminEmail(session.user.email)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const row = await getOrCreate();
   return NextResponse.json(row);
 }
 
 export async function PATCH(req: Request) {
+  // ✅ защита админского API
   const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user || !isAdminEmail(session.user.email)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const body = await req.json();
@@ -40,7 +61,10 @@ export async function PATCH(req: Request) {
     speedRaw === undefined ? undefined : Math.max(5, Math.floor(speedRaw));
 
   if (text !== undefined && text.length < 1) {
-    return NextResponse.json({ error: "Текст не может быть пустым" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Текст не может быть пустым" },
+      { status: 400 }
+    );
   }
 
   const current = await getOrCreate();

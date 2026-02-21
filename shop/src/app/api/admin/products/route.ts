@@ -2,6 +2,20 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 
+function parseAdminEmails(v?: string) {
+  return (v ?? "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function isAdminEmail(email?: string | null) {
+  const e = (email ?? "").trim().toLowerCase();
+  if (!e) return false;
+  const admins = parseAdminEmails(process.env.ADMIN_EMAILS);
+  return admins.includes(e);
+}
+
 const VariantSchema = z.object({
   size: z.string().min(1),
   color: z.string().optional(),
@@ -84,9 +98,11 @@ function makeSku(slug: string, size: string, color: string) {
 }
 
 export async function POST(req: Request) {
+  // ✅ защита админского API
   const session = await auth();
-  if (!session?.user)
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user || !isAdminEmail(session.user.email)) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   try {
     const body = Schema.parse(await req.json());
@@ -121,7 +137,9 @@ export async function POST(req: Request) {
           images: imagesFinal,
           isSoon,
           discountPercent: isSoon ? 0 : body.discountPercent ?? 0,
-          category: body.categoryId ? { connect: { id: body.categoryId } } : undefined,
+          category: body.categoryId
+            ? { connect: { id: body.categoryId } }
+            : undefined,
 
           // ✅ размерная таблица
           sizeChartImage: body.sizeChartImage ?? null,

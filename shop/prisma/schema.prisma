@@ -28,34 +28,45 @@ model User {
 
   role      String   @default("user")
 
-  // ✅ общий флаг подтверждения аккаунта (после TG-кода)
+  // ✅ общий флаг подтверждения аккаунта
+  // (можешь включать его после успешной привязки TG)
   isVerified Boolean @default(false)
 
   // ✅ Telegram (привязка)
   tgChatId     String?   @unique
-  tgVerifiedAt DateTime?
+  tgUsername   String?
+  tgLinkedAt   DateTime?
+  tgVerifiedAt DateTime? // оставил, если хочешь отдельно фиксировать "верификацию" через TG
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   orders    Order[]
   newsletterEnabled Boolean @default(false)
+
+  tgLinkCodes TgLinkCode[]
 }
 
 /**
- * ✅ Вариант A: временная таблица для связки "код ↔ chatId"
- * Бот создаёт запись при /start, сайт подтверждает код и переносит chatId в User.
+ * ✅ Новый вариант под твою схему:
+ * Сайт генерирует код, пользователь отправляет его в бота,
+ * бот по коду находит пользователя и привязывает chatId.
+ *
+ * Храним HASH кода (не сам код), одноразовый, с TTL.
  */
-model TgVerification {
+model TgLinkCode {
   id        String   @id @default(cuid())
-
-  chatId    String
+  userId    String
   codeHash  String   @unique
   expiresAt DateTime
+  usedAt    DateTime?
   createdAt DateTime @default(now())
 
-  @@index([chatId])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
   @@index([expiresAt])
+  @@index([usedAt])
 }
 
 model Category {
@@ -131,7 +142,7 @@ model Order {
   id        String      @id @default(cuid())
   userId    String?
   user      User?       @relation(fields: [userId], references: [id])
-  status    OrderStatus @default(PENDING)
+  status    OrderStatus @default(NEW)
   total     Int
   createdAt DateTime    @default(now())
 
@@ -155,8 +166,10 @@ model OrderItem {
 }
 
 enum OrderStatus {
-  PENDING
-  PAID
-  CANCELED
+  NEW
+  PROCESSING
   SHIPPED
+  DELIVERED
+  CANCELED
+  RETURNED
 }

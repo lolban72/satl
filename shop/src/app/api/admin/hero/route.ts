@@ -15,10 +15,24 @@ const PatchSchema = z.object({
   overlay: z.number().int().min(0).max(100),
 });
 
+function parseAdminEmails(v?: string) {
+  return (v ?? "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function isAdminEmail(email?: string | null) {
+  const e = (email ?? "").trim().toLowerCase();
+  if (!e) return false;
+  const admins = parseAdminEmails(process.env.ADMIN_EMAILS);
+  return admins.includes(e);
+}
+
 export async function GET() {
   const session = await auth();
-  if (!session?.user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user || !isAdminEmail(session.user.email)) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
   let banner = await prisma.heroBanner.findFirst({
@@ -45,8 +59,8 @@ export async function GET() {
 
 export async function PATCH(req: Request) {
   const session = await auth();
-  if (!session?.user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user || !isAdminEmail(session.user.email)) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
   try {
